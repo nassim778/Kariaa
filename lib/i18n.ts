@@ -28,6 +28,7 @@ const fr: Dict = {
   list_count: "Liste ({count})",
   filters: "Filtres",
   account: "Compte",
+  search_tap: "Rechercher sur la carte",
   source_supabase: "Supabase · PostGIS",
   source_demo: "Données démo",
 
@@ -182,6 +183,7 @@ const en: Dict = {
   list_count: "List ({count})",
   filters: "Filters",
   account: "Account",
+  search_tap: "Search on the map",
   source_supabase: "Supabase · PostGIS",
   source_demo: "Demo data",
 
@@ -335,6 +337,7 @@ const tn: Dict = {
   list_count: "القائمة ({count})",
   filters: "فلاتر",
   account: "الحساب",
+  search_tap: "لوّج عالخريطة",
   source_supabase: "Supabase · PostGIS",
   source_demo: "معطيات تجريبية",
 
@@ -409,7 +412,7 @@ const tn: Dict = {
   save: "سجّل",
   publish: "أنشر",
   delete: "أمسح",
-  title_ph: "مثال: شقة مضويّة في المرسى",
+  title_ph: "مثال: شقة مفرشة في المرسى",
   desc_ph: "أوصف العقار…",
   address_ph: "الشارع، الحومة…",
   required_error: "العنوان والكراء ضروريين.",
