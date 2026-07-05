@@ -28,7 +28,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. With no environment variables set, Karia serves the
+With no environment variables set, Karia serves the
 bundled demo listings (see the "Données démo" badge), so everything works out of
 the box.
 
