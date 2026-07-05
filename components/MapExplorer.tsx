@@ -142,6 +142,11 @@ export default function MapExplorer() {
   const detailListing =
     detailId != null ? listings.find((l) => l.id === detailId) ?? null : null;
 
+  const openAuth = () => {
+    if (configured) setShowAuth(true);
+    else alert(t("auth_needed_alert"));
+  };
+
   return (
     <div className="relative h-screen-safe w-screen overflow-hidden [--karia-topbar:8.25rem]">
       <MapView
@@ -164,8 +169,63 @@ export default function MapExplorer() {
         </div>
       </div>
 
+      {/* Rent CTA + auth — top right (Arabic line always) */}
+      <div className="pointer-events-none absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
+        <div className="pointer-events-auto flex flex-col items-end gap-1.5 rounded-2xl bg-white/90 px-3 py-2.5 shadow-lg backdrop-blur">
+          <p
+            className="text-[11px] font-medium leading-snug text-slate-700"
+            dir="rtl"
+            lang="ar"
+          >
+            عندك دار للكراء ؟
+          </p>
+          {user ? (
+            <div ref={userMenuRef} className="group relative w-full">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className="flex w-full min-w-[7.5rem] touch-manipulation items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition active:bg-slate-50 sm:hover:bg-slate-50"
+              >
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-slate-100 text-[10px] font-bold">
+                  {user.email?.[0]?.toUpperCase() ?? "U"}
+                </span>
+                <span className="max-w-[5.5rem] truncate">{user.email}</span>
+              </button>
+              <div
+                className={`absolute right-0 top-full z-30 mt-1 w-48 rounded-xl border border-slate-100 bg-white p-2 shadow-lg transition ${
+                  userMenuOpen
+                    ? "visible opacity-100"
+                    : "invisible opacity-0 group-hover:visible group-hover:opacity-100"
+                }`}
+              >
+                <p className="truncate px-2 py-1 text-[11px] text-slate-400">
+                  {user.email}
+                </p>
+                <button
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    signOut();
+                  }}
+                  className="w-full rounded-lg px-2 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50"
+                >
+                  {t("logout")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={openAuth}
+              className="w-full min-w-[7.5rem] touch-manipulation rounded-xl border border-brand px-3 py-2 text-xs font-medium text-brand transition active:bg-brand active:text-white sm:hover:bg-brand sm:hover:text-white"
+            >
+              {t("login")}
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Top control bar */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-safe sm:p-4 sm:pl-44">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-[calc(var(--safe-top)+4.5rem)] sm:p-4 sm:pl-44 sm:pr-44 sm:pt-4">
         <div className="pointer-events-auto mx-auto flex max-w-5xl flex-col gap-2 rounded-2xl bg-white/95 p-3 shadow-lg backdrop-blur sm:gap-2">
           {/* Mobile header row */}
           <div className="flex items-center gap-2 sm:hidden">
@@ -216,56 +276,15 @@ export default function MapExplorer() {
                 </span>
               </button>
 
-              {user ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={startAddListing}
-                    className="flex items-center gap-1.5 rounded-xl bg-brand px-3 py-2 text-xs font-medium text-white transition hover:bg-brand-dark"
-                  >
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    <span>{t("add_listing")}</span>
-                  </button>
-                  <div ref={userMenuRef} className="group relative">
-                    <button
-                      onClick={() => setUserMenuOpen((v) => !v)}
-                      className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600"
-                    >
-                      {user.email?.[0]?.toUpperCase() ?? "U"}
-                    </button>
-                    <div
-                      className={`absolute right-0 top-full z-30 mt-1 w-48 rounded-xl border border-slate-100 bg-white p-2 shadow-lg transition ${
-                        userMenuOpen
-                          ? "visible opacity-100"
-                          : "invisible opacity-0 group-hover:visible group-hover:opacity-100"
-                      }`}
-                    >
-                      <p className="truncate px-2 py-1 text-[11px] text-slate-400">
-                        {user.email}
-                      </p>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          signOut();
-                        }}
-                        className="w-full rounded-lg px-2 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50"
-                      >
-                        {t("logout")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
+              {user && (
                 <button
-                  onClick={() =>
-                    configured
-                      ? setShowAuth(true)
-                      : alert(t("auth_needed_alert"))
-                  }
-                  className="rounded-xl border border-brand px-3 py-2 text-xs font-medium text-brand transition hover:bg-brand hover:text-white"
+                  onClick={startAddListing}
+                  className="flex items-center gap-1.5 rounded-xl bg-brand px-3 py-2 text-xs font-medium text-white transition hover:bg-brand-dark"
                 >
-                  {t("login")}
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  <span>{t("add_listing")}</span>
                 </button>
               )}
             </div>
@@ -452,19 +471,7 @@ export default function MapExplorer() {
             </button>
           </>
         ) : (
-          <button
-            type="button"
-            onClick={() =>
-              configured ? setShowAuth(true) : alert(t("auth_needed_alert"))
-            }
-            className="flex min-h-[44px] min-w-[4.5rem] touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[10px] font-medium text-slate-600 active:bg-slate-100"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            <span>{t("login")}</span>
-          </button>
+          <div className="min-w-[4.5rem]" aria-hidden />
         )}
       </nav>
 
