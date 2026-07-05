@@ -63,7 +63,7 @@ export default function PlaceSearch({ onSelect }: Props) {
 
   return (
     <div ref={boxRef} className="relative w-full">
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:border-brand">
+      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm focus-within:border-brand sm:py-2">
         <svg className="h-4 w-4 shrink-0 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z" />
           <circle cx="12" cy="10" r="3" />
@@ -75,7 +75,7 @@ export default function PlaceSearch({ onSelect }: Props) {
           placeholder={t("search_placeholder")}
           dir={dir}
           lang={locale === "tn" ? "ar" : locale}
-          className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+          className="w-full bg-transparent text-base outline-none placeholder:text-slate-400 sm:text-sm"
         />
         {loading && (
           <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-brand border-t-transparent" />

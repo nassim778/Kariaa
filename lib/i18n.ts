@@ -26,6 +26,8 @@ const fr: Dict = {
   auth_needed_alert: "Connectez Supabase (.env.local) pour activer les comptes.",
   hide: "Masquer",
   list_count: "Liste ({count})",
+  filters: "Filtres",
+  account: "Compte",
   source_supabase: "Supabase · PostGIS",
   source_demo: "Données démo",
 
@@ -178,6 +180,8 @@ const en: Dict = {
   auth_needed_alert: "Connect Supabase (.env.local) to enable accounts.",
   hide: "Hide",
   list_count: "List ({count})",
+  filters: "Filters",
+  account: "Account",
   source_supabase: "Supabase · PostGIS",
   source_demo: "Demo data",
 
@@ -329,6 +333,8 @@ const tn: Dict = {
   auth_needed_alert: "وصّل Supabase (.env.local) باش تفعّل الحسابات.",
   hide: "خبّي",
   list_count: "القائمة ({count})",
+  filters: "فلاتر",
+  account: "الحساب",
   source_supabase: "Supabase · PostGIS",
   source_demo: "معطيات تجريبية",
 

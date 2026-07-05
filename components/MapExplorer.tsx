@@ -23,7 +23,9 @@ export default function MapExplorer() {
   const [poi, setPoi] = useState<GeoPlace | null>(null);
   const [radiusM, setRadiusM] = useState(2000);
   const [bbox, setBBox] = useState<BBox | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [basemap, setBasemap] = useState<BasemapId>("voyager");
   const [pickPurpose, setPickPurpose] = useState<PickPurpose>(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -38,6 +40,24 @@ export default function MapExplorer() {
   const { user, isAdmin, configured, signOut } = useAuth();
   const { t } = useI18n();
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (window.matchMedia("(min-width: 640px)").matches) {
+      setSidebarOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (!userMenuRef.current?.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [userMenuOpen]);
 
   const buildQuery = useCallback((): string | null => {
     const p = new URLSearchParams();
@@ -123,7 +143,7 @@ export default function MapExplorer() {
     detailId != null ? listings.find((l) => l.id === detailId) ?? null : null;
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden [--karia-topbar:10.5rem] sm:[--karia-topbar:8.25rem]">
+    <div className="relative h-screen-safe w-screen overflow-hidden [--karia-topbar:8.25rem]">
       <MapView
         listings={listings}
         activeId={activeId}
@@ -137,103 +157,162 @@ export default function MapExplorer() {
         onMapPick={handleMapPick}
       />
 
-      {/* Brand + language — top left */}
-      <div className="pointer-events-none absolute left-3 top-3 z-20 sm:left-4 sm:top-4">
+      {/* Brand + language — desktop top left */}
+      <div className="pointer-events-none absolute left-3 top-3 z-20 hidden sm:left-4 sm:top-4 sm:block">
         <div className="pointer-events-auto rounded-2xl bg-white/90 p-2.5 shadow-lg backdrop-blur">
           <KariaBrandBlock />
         </div>
       </div>
 
       {/* Top control bar */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[5.75rem] sm:p-4 sm:pt-4 sm:pl-44">
-        <div className="pointer-events-auto mx-auto flex max-w-5xl flex-col gap-2 rounded-2xl bg-white/90 p-3 shadow-lg backdrop-blur">
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <PlaceSearch onSelect={handleSelectPlace} />
-            </div>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-safe sm:p-4 sm:pl-44">
+        <div className="pointer-events-auto mx-auto flex max-w-5xl flex-col gap-2 rounded-2xl bg-white/95 p-3 shadow-lg backdrop-blur sm:gap-2">
+          {/* Mobile header row */}
+          <div className="flex items-center gap-2 sm:hidden">
+            <KariaBrandBlock compact className="min-w-0 flex-1" />
             <button
               onClick={() =>
                 setPickPurpose((p) => (p === "poi" ? null : "poi"))
               }
               title={t("radius_hint")}
-              className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${
+              className={`grid h-10 w-10 shrink-0 touch-manipulation place-items-center rounded-xl border transition active:scale-95 ${
                 pickPurpose === "poi"
                   ? "border-blue-500 bg-blue-500 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                  : "border-slate-200 bg-white text-slate-600"
               }`}
+              aria-label={t("point_on_map")}
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
               </svg>
-              <span className="hidden sm:inline">
-                {pickPurpose === "poi" ? t("clicking_map") : t("point_on_map")}
-              </span>
             </button>
+          </div>
 
-            {/* Auth / add listing */}
-            {user ? (
-              <div className="flex shrink-0 items-center gap-2">
-                <button
-                  onClick={startAddListing}
-                  className="flex items-center gap-1.5 rounded-xl bg-brand px-3 py-2 text-xs font-medium text-white transition hover:bg-brand-dark"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                  <span className="hidden sm:inline">{t("add_listing")}</span>
-                </button>
-                <div className="group relative">
-                  <button className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-                    {user.email?.[0]?.toUpperCase() ?? "U"}
-                  </button>
-                  <div className="invisible absolute right-0 top-full z-30 mt-1 w-48 rounded-xl border border-slate-100 bg-white p-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
-                    <p className="truncate px-2 py-1 text-[11px] text-slate-400">
-                      {user.email}
-                    </p>
-                    <button
-                      onClick={() => signOut()}
-                      className="w-full rounded-lg px-2 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50"
-                    >
-                      {t("logout")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex-1">
+              <PlaceSearch onSelect={handleSelectPlace} />
+            </div>
+
+            {/* Desktop toolbar */}
+            <div className="hidden shrink-0 items-center gap-2 sm:flex">
               <button
                 onClick={() =>
-                  configured
-                    ? setShowAuth(true)
-                    : alert(t("auth_needed_alert"))
+                  setPickPurpose((p) => (p === "poi" ? null : "poi"))
                 }
-                className="shrink-0 rounded-xl border border-brand px-3 py-2 text-xs font-medium text-brand transition hover:bg-brand hover:text-white"
+                title={t("radius_hint")}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${
+                  pickPurpose === "poi"
+                    ? "border-blue-500 bg-blue-500 text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                }`}
               >
-                {t("login")}
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                </svg>
+                <span>
+                  {pickPurpose === "poi" ? t("clicking_map") : t("point_on_map")}
+                </span>
               </button>
-            )}
+
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={startAddListing}
+                    className="flex items-center gap-1.5 rounded-xl bg-brand px-3 py-2 text-xs font-medium text-white transition hover:bg-brand-dark"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    <span>{t("add_listing")}</span>
+                  </button>
+                  <div ref={userMenuRef} className="group relative">
+                    <button
+                      onClick={() => setUserMenuOpen((v) => !v)}
+                      className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600"
+                    >
+                      {user.email?.[0]?.toUpperCase() ?? "U"}
+                    </button>
+                    <div
+                      className={`absolute right-0 top-full z-30 mt-1 w-48 rounded-xl border border-slate-100 bg-white p-2 shadow-lg transition ${
+                        userMenuOpen
+                          ? "visible opacity-100"
+                          : "invisible opacity-0 group-hover:visible group-hover:opacity-100"
+                      }`}
+                    >
+                      <p className="truncate px-2 py-1 text-[11px] text-slate-400">
+                        {user.email}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          signOut();
+                        }}
+                        className="w-full rounded-lg px-2 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50"
+                      >
+                        {t("logout")}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() =>
+                    configured
+                      ? setShowAuth(true)
+                      : alert(t("auth_needed_alert"))
+                  }
+                  className="rounded-xl border border-brand px-3 py-2 text-xs font-medium text-brand transition hover:bg-brand hover:text-white"
+                >
+                  {t("login")}
+                </button>
+              )}
+            </div>
           </div>
-          <FiltersBar
-            filters={filters}
-            onChange={setFilters}
-            radiusM={radiusM}
-            onRadiusChange={setRadiusM}
-            poiActive={!!poi}
-          />
+
+          {/* Filters — collapsible on mobile */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setFiltersExpanded((v) => !v)}
+              className="mb-2 flex w-full touch-manipulation items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-medium text-slate-600 active:bg-slate-100 sm:hidden"
+            >
+              <span>{t("filters")}</span>
+              <svg
+                className={`h-4 w-4 transition ${filtersExpanded ? "rotate-180" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            <div className={`${filtersExpanded ? "block" : "hidden"} sm:block`}>
+              <FiltersBar
+                filters={filters}
+                onChange={setFilters}
+                radiusM={radiusM}
+                onRadiusChange={setRadiusM}
+                poiActive={!!poi}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Basemap switcher */}
-      <div className="absolute bottom-4 left-4 z-20 flex flex-col items-start gap-2">
-        <div className="flex overflow-hidden rounded-full bg-white/90 p-1 shadow backdrop-blur">
+      <div className="absolute bottom-[var(--karia-mobile-nav)] left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col items-start gap-2 sm:bottom-4 sm:left-4">
+        <div className="karia-scroll flex max-w-full overflow-x-auto rounded-full bg-white/95 p-1 shadow backdrop-blur">
           {(Object.keys(BASEMAPS) as BasemapId[]).map((id) => (
             <button
               key={id}
               onClick={() => setBasemap(id)}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
+              className={`shrink-0 touch-manipulation rounded-full px-3 py-1.5 text-[11px] font-medium transition active:scale-95 ${
                 basemap === id
                   ? "bg-brand text-white"
-                  : "text-slate-600 hover:bg-slate-100"
+                  : "text-slate-600 active:bg-slate-100"
               }`}
             >
               {t(`basemap_${id}`)}
@@ -242,43 +321,43 @@ export default function MapExplorer() {
         </div>
       </div>
 
-      {/* Sidebar (listings) — starts below top controls */}
+      {/* Mobile backdrop when listings sheet is open */}
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label={t("hide")}
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-[9] bg-black/25 sm:hidden"
+        />
+      )}
+
+      {/* Sidebar (listings) — bottom sheet on mobile, right panel on desktop */}
       <div
-        className={`absolute bottom-0 right-0 top-[var(--karia-topbar)] z-10 w-full transition-transform sm:w-[380px] ${
-          sidebarOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed inset-x-0 bottom-0 z-10 max-h-[min(72dvh,560px)] transition-transform duration-300 ease-out sm:absolute sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-[var(--karia-topbar)] sm:max-h-none sm:w-[380px] ${
+          sidebarOpen
+            ? "translate-y-0 sm:translate-x-0"
+            : "translate-y-full sm:translate-y-0 sm:translate-x-full"
         }`}
       >
-        <div className="h-full overflow-hidden rounded-tl-2xl bg-white shadow-2xl">
-          <div className="hidden h-full sm:block">
-            <Sidebar
-              listings={listings}
-              activeId={activeId}
-              onActiveChange={setActiveId}
-              onListingClick={handleListingClick}
-              poi={poi}
-              radiusM={radiusM}
-              onClearPoi={() => setPoi(null)}
-            />
-          </div>
-          <div className="flex h-full flex-col sm:hidden">
-            <Sidebar
-              listings={listings}
-              activeId={activeId}
-              onActiveChange={setActiveId}
-              onListingClick={handleListingClick}
-              poi={poi}
-              radiusM={radiusM}
-              onClearPoi={() => setPoi(null)}
-            />
-          </div>
+        <div className="karia-sheet h-full overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-none sm:rounded-tl-2xl">
+          <Sidebar
+            listings={listings}
+            activeId={activeId}
+            onActiveChange={setActiveId}
+            onListingClick={handleListingClick}
+            poi={poi}
+            radiusM={radiusM}
+            onClearPoi={() => setPoi(null)}
+            onClose={() => setSidebarOpen(false)}
+          />
         </div>
       </div>
 
-      {/* Toggle sidebar — sits on the left edge of the panel */}
+      {/* Toggle sidebar — desktop only */}
       <button
         onClick={() => setSidebarOpen((v) => !v)}
-        className={`absolute top-1/2 z-20 -translate-y-1/2 rounded-l-xl bg-brand px-2 py-4 text-xs font-medium text-white shadow-lg transition-all hover:bg-brand-dark ${
-          sidebarOpen ? "right-0 sm:right-[380px]" : "right-0"
+        className={`absolute top-1/2 z-20 hidden -translate-y-1/2 rounded-l-xl bg-brand px-2 py-4 text-xs font-medium text-white shadow-lg transition-all hover:bg-brand-dark sm:block ${
+          sidebarOpen ? "right-[380px]" : "right-0"
         }`}
         style={{ writingMode: "vertical-rl" }}
         aria-label={sidebarOpen ? t("hide") : t("list_count", { count: listings.length })}
@@ -287,12 +366,12 @@ export default function MapExplorer() {
       </button>
 
       {pickPurpose === "listing" && (
-        <div className="pointer-events-none absolute left-1/2 top-28 z-30 -translate-x-1/2">
-          <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white shadow-lg">
-            {t("listing_banner")}
+        <div className="pointer-events-none absolute left-1/2 top-[calc(var(--safe-top)+7.5rem)] z-30 max-w-[calc(100%-2rem)] -translate-x-1/2 sm:top-28">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-brand px-4 py-2.5 text-sm font-medium text-white shadow-lg">
+            <span className="truncate">{t("listing_banner")}</span>
             <button
               onClick={() => setPickPurpose(null)}
-              className="rounded-full bg-white/20 px-2 py-0.5 text-xs hover:bg-white/30"
+              className="shrink-0 touch-manipulation rounded-full bg-white/20 px-2.5 py-1 text-xs active:bg-white/30"
             >
               {t("cancel")}
             </button>
@@ -301,7 +380,7 @@ export default function MapExplorer() {
       )}
 
       {user && (
-        <div className="absolute left-0 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-1">
+        <div className="absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-1 sm:flex">
           {isAdmin && (
             <Link
               href="/admin"
@@ -321,6 +400,106 @@ export default function MapExplorer() {
             {t("my_listings")}
           </Link>
         </div>
+      )}
+
+      {/* Mobile bottom navigation */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-slate-200/90 bg-white/95 px-2 pb-safe pt-1.5 shadow-[0_-4px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="flex min-h-[44px] min-w-[4.5rem] touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[10px] font-medium text-slate-600 active:bg-slate-100"
+        >
+          <svg className="h-5 w-5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+          </svg>
+          <span>{t("list_count", { count: listings.length })}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={startAddListing}
+          className="flex min-h-[44px] min-w-[4.5rem] touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[10px] font-medium text-brand active:bg-brand/10"
+        >
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-white shadow-md">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+          <span>{t("add_listing")}</span>
+        </button>
+
+        {user ? (
+          <>
+            <Link
+              href="/mes-annonces"
+              className="flex min-h-[44px] min-w-[4.5rem] touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[10px] font-medium text-slate-600 active:bg-slate-100"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              <span>{t("my_listings")}</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((v) => !v)}
+              className="flex min-h-[44px] min-w-[4.5rem] touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[10px] font-medium text-slate-600 active:bg-slate-100"
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                {user.email?.[0]?.toUpperCase() ?? "U"}
+              </span>
+              <span>{t("account")}</span>
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() =>
+              configured ? setShowAuth(true) : alert(t("auth_needed_alert"))
+            }
+            className="flex min-h-[44px] min-w-[4.5rem] touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[10px] font-medium text-slate-600 active:bg-slate-100"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span>{t("login")}</span>
+          </button>
+        )}
+      </nav>
+
+      {/* Mobile account menu overlay */}
+      {userMenuOpen && user && (
+        <>
+          <button
+            type="button"
+            aria-label={t("hide")}
+            className="fixed inset-0 z-[35] sm:hidden"
+            onClick={() => setUserMenuOpen(false)}
+          />
+          <div className="fixed inset-x-3 bottom-[calc(var(--karia-mobile-nav)+0.5rem)] z-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl sm:hidden">
+          <p className="truncate px-3 py-2 text-xs text-slate-400">{user.email}</p>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setUserMenuOpen(false)}
+              className="block w-full touch-manipulation rounded-xl px-3 py-3 text-left text-sm text-red-700 active:bg-red-50"
+            >
+              {t("admin_space")}
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setUserMenuOpen(false);
+              signOut();
+            }}
+            className="w-full touch-manipulation rounded-xl px-3 py-3 text-left text-sm text-slate-700 active:bg-slate-50"
+          >
+            {t("logout")}
+          </button>
+        </div>
+        </>
       )}
 
       {/* Modals */}

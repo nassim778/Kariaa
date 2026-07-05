@@ -249,11 +249,11 @@ export default function AddListingModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="karia-scroll max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-2xl"
+        className="karia-scroll karia-sheet max-h-[min(92dvh,720px)] w-full max-w-lg overflow-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:max-h-[90vh] sm:rounded-2xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-1 flex items-center justify-between">
@@ -307,7 +307,7 @@ export default function AddListingModal({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label={t("field_type")}>
               <select
                 value={type}
@@ -333,7 +333,7 @@ export default function AddListingModal({
             </Field>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Field label={t("bedrooms")}>
               <input
                 type="number"
@@ -363,7 +363,7 @@ export default function AddListingModal({
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label={t("field_governorate")}>
               <input
                 value={governorate}
@@ -484,7 +484,7 @@ export default function AddListingModal({
             </p>
           )}
 
-          <div className="flex gap-2 pt-1">
+          <div className="sticky bottom-0 -mx-5 flex gap-2 border-t border-slate-100 bg-white px-5 py-3 pb-safe sm:static sm:mx-0 sm:border-0 sm:p-0 sm:pt-1">
             {isEdit && (
               <button
                 type="button"

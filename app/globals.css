@@ -4,12 +4,17 @@
 
 @layer components {
   .input {
-    @apply w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand;
+    @apply w-full rounded-lg border border-slate-200 px-3 py-2.5 text-base text-slate-800 outline-none focus:border-brand sm:py-2 sm:text-sm;
   }
 }
 
 :root {
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --karia-mobile-nav: calc(3.75rem + var(--safe-bottom));
 }
 
 html,
@@ -22,6 +27,30 @@ body {
 /* Let the map own the full viewport without page scroll. */
 body {
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: max(0.75rem, var(--safe-top));
+  }
+  .pb-safe {
+    padding-bottom: max(0.5rem, var(--safe-bottom));
+  }
+  .px-safe {
+    padding-left: max(0.75rem, var(--safe-left));
+    padding-right: max(0.75rem, var(--safe-right));
+  }
+  .h-screen-safe {
+    height: 100dvh;
+  }
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  .karia-sheet {
+    padding-bottom: max(0.75rem, var(--safe-bottom));
+  }
 }
 
 /* MapLibre popups styled to match Karia's look. */

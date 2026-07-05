@@ -13,6 +13,7 @@ interface Props {
   poi: GeoPlace | null;
   radiusM: number;
   onClearPoi: () => void;
+  onClose?: () => void;
 }
 
 export default function Sidebar({
@@ -23,14 +24,32 @@ export default function Sidebar({
   poi,
   radiusM,
   onClearPoi,
+  onClose,
 }: Props) {
   const { t } = useI18n();
   return (
     <div className="flex h-full flex-col">
+      <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
+        <div className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
+      </div>
       <div className="border-b border-slate-100 px-4 py-3">
-        <p className="text-sm font-semibold text-slate-800">
-          {t("results_found", { count: listings.length })}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-800">
+            {t("results_found", { count: listings.length })}
+          </p>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="grid h-8 w-8 shrink-0 touch-manipulation place-items-center rounded-full text-slate-400 active:bg-slate-100 sm:hidden"
+              aria-label={t("hide")}
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
         {poi ? (
           <div className="mt-1 flex items-start justify-between gap-2">
             <p className="text-xs text-blue-600">
@@ -66,11 +85,11 @@ export default function Sidebar({
                     onListingClick(l.id);
                   }}
                   onMouseEnter={() => onActiveChange(l.id)}
-                  className={`flex w-full gap-3 p-3 text-left transition ${
-                    activeId === l.id ? "bg-teal-50" : "hover:bg-slate-50"
+                  className={`flex w-full gap-3 p-3.5 text-left transition active:bg-slate-100 sm:p-3 sm:hover:bg-slate-50 ${
+                    activeId === l.id ? "bg-teal-50" : ""
                   }`}
                 >
-                  <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                  <div className="relative h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-20 sm:w-24 sm:rounded-lg">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={cover}

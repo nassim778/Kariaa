@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./LanguageProvider";
 import { LOCALES } from "@/lib/i18n";
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ className = "" }: { className?: string }) {
   const { locale, setLocale } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -20,11 +20,11 @@ export default function LanguageSwitcher() {
   }, [open]);
 
   return (
-    <div ref={ref} className="relative w-full min-w-[7.5rem]">
+    <div ref={ref} className={`relative w-full min-w-[7.5rem] ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+        className="flex w-full min-h-[36px] touch-manipulation items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-medium text-slate-700 shadow-sm transition active:bg-slate-100 sm:hover:bg-slate-50"
         aria-expanded={open}
         aria-haspopup="listbox"
       >
@@ -66,7 +66,7 @@ export default function LanguageSwitcher() {
                   setLocale(l.id);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center px-3 py-2 text-left text-[11px] font-medium transition ${
+                className={`flex w-full min-h-[40px] touch-manipulation items-center px-3 py-2.5 text-left text-[11px] font-medium transition active:bg-slate-100 ${
                   locale === l.id
                     ? "bg-brand/10 text-brand"
                     : "text-slate-600 hover:bg-slate-50"

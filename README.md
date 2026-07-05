@@ -48,6 +48,60 @@ the box.
 4. Restart `npm run dev`. The badge now reads "Supabase · PostGIS" and all map
    queries hit the database.
 
+## Deploy online (free, no Vercel)
+
+Karia needs a **Node.js** host (API routes for listings + geocoding). Recommended: **[Render](https://render.com)** free tier.
+
+### 1. Push code to GitHub
+
+Repo: `https://github.com/nassim778/Kariaa.git`
+
+### 2. Create the web service on Render
+
+1. Sign up at [render.com](https://render.com) with GitHub.
+2. **New → Web Service** → select the **Kariaa** repository.
+3. Settings (Render usually auto-fills these):
+   - **Runtime:** Node
+   - **Build command:** `npm ci && npm run build`
+   - **Start command:** `npm start`
+   - **Plan:** Free
+   - **Region:** Frankfurt (closest to Tunisia)
+4. **Environment variables** (from your `.env.local`):
+
+   | Key | Value |
+   |-----|-------|
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your Supabase anon key |
+
+5. Click **Create Web Service**. First deploy takes ~5–10 minutes.
+
+Your URL will look like: `https://karia-xxxx.onrender.com`
+
+> **Free tier note:** the app sleeps after ~15 min without traffic. The first visit after sleep may take 30–60 s to wake up.
+
+### 3. Configure Supabase for production
+
+In [Supabase Dashboard](https://supabase.com/dashboard) → your project → **Authentication → URL Configuration**:
+
+- **Site URL:** `https://YOUR-RENDER-URL.onrender.com`
+- **Redirect URLs:** add `https://YOUR-RENDER-URL.onrender.com/**`
+
+Under **Project Settings → API**, confirm the anon key matches what you set on Render.
+
+### 4. (Optional) Custom domain
+
+Render free tier supports custom domains (e.g. `karia.tn`) in **Settings → Custom Domains**.
+
+### Alternative free hosts
+
+| Host | Config file | Notes |
+|------|-------------|-------|
+| [Netlify](https://www.netlify.com) | `netlify.toml` | Free, good Next.js support |
+| [Koyeb](https://www.koyeb.com) | Docker / Node | Free nano instance |
+| [Fly.io](https://fly.io) | `fly.toml` (manual) | Small free allowance |
+
+`render.yaml` in this repo can also be used via **New → Blueprint** for one-click setup.
+
 ## How the geospatial search works
 
 - **Viewport:** on every `moveend` the map sends its bounding box to

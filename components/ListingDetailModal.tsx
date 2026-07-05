@@ -47,7 +47,7 @@ export default function ListingDetailModal({
       onClick={onClose}
     >
       <div
-        className="karia-scroll flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-2xl"
+        className="karia-scroll flex max-h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative shrink-0 bg-slate-100">
@@ -55,7 +55,7 @@ export default function ListingDetailModal({
           <img
             src={activeImage}
             alt={l.title}
-            className="h-52 w-full object-cover sm:h-60"
+            className="h-56 w-full object-cover sm:h-60"
           />
 
           {displayImages.length > 1 && (
@@ -127,7 +127,7 @@ export default function ListingDetailModal({
           </div>
         )}
 
-        <div className="flex-1 overflow-auto p-5">
+        <div className="karia-sheet flex-1 overflow-auto p-5 pb-6">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span className="text-2xl font-bold text-brand">
               {l.price} {t("currency")}
@@ -151,7 +151,7 @@ export default function ListingDetailModal({
           {l.phone && (
             <a
               href={phoneHref ? `tel:${phoneHref}` : undefined}
-              className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-brand py-2.5 text-sm font-medium text-white transition hover:bg-brand-dark"
+              className="mt-4 flex min-h-[48px] touch-manipulation items-center justify-center gap-2 rounded-xl bg-brand py-3 text-sm font-medium text-white transition active:bg-brand-dark sm:hover:bg-brand-dark"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />

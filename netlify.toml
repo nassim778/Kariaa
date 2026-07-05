@@ -1,0 +1,6 @@
+# Alternative free host: https://www.netlify.com (not Vercel)
+[build]
+  command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

@@ -59,11 +59,11 @@ export default function AuthModal({ onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="karia-scroll max-h-[90vh] w-full max-w-sm overflow-auto rounded-2xl bg-white shadow-2xl"
+        className="karia-scroll karia-sheet max-h-[min(92dvh,640px)] w-full max-w-sm overflow-auto rounded-t-3xl bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative h-28 shrink-0 overflow-hidden bg-slate-50">
@@ -74,7 +74,7 @@ export default function AuthModal({ onClose }: Props) {
             className="object-cover object-center"
           />
         </div>
-        <div className="p-6">
+        <div className="p-5 pb-safe sm:p-6">
         <div className="mb-4 flex items-center gap-2">
           <BrandLogo size={32} />
           <h2 className="text-lg font-bold text-slate-800">

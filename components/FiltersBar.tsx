@@ -30,16 +30,16 @@ export default function FiltersBar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="karia-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
       {/* Property types */}
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex shrink-0 gap-1.5 sm:flex-wrap">
         {TYPES.map((t) => {
           const active = filters.types?.includes(t);
           return (
             <button
               key={t}
               onClick={() => toggleType(t)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+              className={`shrink-0 touch-manipulation rounded-full border px-3 py-1.5 text-xs font-medium transition active:scale-[0.98] ${
                 active
                   ? "border-brand bg-brand text-white"
                   : "border-slate-200 bg-white text-slate-600 hover:border-brand"
@@ -51,10 +51,10 @@ export default function FiltersBar({
         })}
       </div>
 
-      <div className="h-5 w-px bg-slate-200" />
+      <div className="hidden h-5 w-px shrink-0 bg-slate-200 sm:block" />
 
       {/* Price */}
-      <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1">
+      <div className="flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1.5">
         <input
           type="number"
           inputMode="numeric"
@@ -94,7 +94,7 @@ export default function FiltersBar({
             minBeds: e.target.value ? Number(e.target.value) : undefined,
           })
         }
-        className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 outline-none"
+        className="shrink-0 touch-manipulation rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 outline-none"
       >
         <option value="">{tr("bedrooms")}</option>
         <option value="1">1+</option>
@@ -108,7 +108,7 @@ export default function FiltersBar({
         value={radiusM}
         onChange={(e) => onRadiusChange(Number(e.target.value))}
         disabled={!poiActive}
-        className={`rounded-full border px-3 py-1 text-xs outline-none transition ${
+        className={`shrink-0 touch-manipulation rounded-full border px-3 py-1.5 text-xs outline-none transition ${
           poiActive
             ? "border-blue-300 bg-blue-50 text-blue-700"
             : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"

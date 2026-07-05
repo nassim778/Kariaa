@@ -100,21 +100,21 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="h-screen overflow-auto bg-slate-50">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
+    <div className="h-screen-safe overflow-auto bg-slate-50">
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link href="/" className="flex min-w-0 items-center gap-2">
             <BrandLogo size={36} />
-            <div className="leading-tight">
-              <p className="text-sm font-bold text-slate-800">{t("admin_title")}</p>
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-sm font-bold text-slate-800">{t("admin_title")}</p>
               <p className="text-[11px] text-slate-400">{t("admin_sub")}</p>
             </div>
           </Link>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
+          <div className="flex flex-wrap items-center gap-2">
+            <LanguageSwitcher className="w-auto min-w-[6.5rem]" />
             <Link
               href="/"
-              className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              className="touch-manipulation rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-medium text-slate-600 active:bg-slate-50"
             >
               {t("admin_back")}
             </Link>
@@ -122,7 +122,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-4 pb-safe sm:py-6">
         {/* Stats */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label={t("admin_stats_listings")} value={listings.length} />
