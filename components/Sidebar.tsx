@@ -27,18 +27,12 @@ export default function Sidebar({
   onClose,
 }: Props) {
   const { t } = useI18n();
-
-  const openListing = (id: string) => {
-    onActiveChange(id);
-    onListingClick(id);
-  };
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
         <div className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
       </div>
-      <div className="shrink-0 border-b border-slate-100 px-4 py-3">
+      <div className="border-b border-slate-100 px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-semibold text-slate-800">
             {t("results_found", { count: listings.length })}
@@ -74,7 +68,7 @@ export default function Sidebar({
         )}
       </div>
 
-      <div className="karia-scroll karia-scroll-y overflow-y-auto max-sm:h-[calc(min(65dvh,520px)-8rem)] sm:min-h-0 sm:flex-1">
+      <div className="karia-scroll karia-scroll-y min-h-0 flex-1 overflow-y-auto">
         {listings.length === 0 ? (
           <div className="p-6 text-center text-sm text-slate-400">
             {t("none_here")}
@@ -84,60 +78,54 @@ export default function Sidebar({
             {listings.map((l) => {
               const cover = listingCoverOrPlaceholder(l);
               return (
-                <li key={l.id}>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => openListing(l.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        openListing(l.id);
-                      }
-                    }}
-                    onMouseEnter={() => onActiveChange(l.id)}
-                    className={`flex w-full cursor-pointer gap-3 p-3.5 text-left transition active:bg-slate-100 sm:p-3 sm:hover:bg-slate-50 ${
-                      activeId === l.id ? "bg-teal-50" : ""
-                    }`}
-                  >
-                    <div className="relative h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-20 sm:w-24 sm:rounded-lg">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={cover}
-                        alt={l.title}
-                        className="pointer-events-none h-full w-full object-cover"
-                        loading="lazy"
-                        draggable={false}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm font-bold text-brand">
-                          {l.price} {t("currency")}
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          {t("per_month")}
-                        </span>
-                        {l.distance_m !== undefined && (
-                          <span className="ml-auto text-[11px] font-medium text-blue-600">
-                            {(l.distance_m / 1000).toFixed(1)} km
-                          </span>
-                        )}
-                      </div>
-                      <p className="truncate text-sm font-medium text-slate-800">
-                        {l.title}
-                      </p>
-                      <p className="truncate text-xs text-slate-500">
-                        {t(propertyTypeKey(l.type))} · {l.bedrooms}{" "}
-                        {t("rooms_abbr")} · {l.area_sqm ?? "—"} m²
-                      </p>
-                      <p className="truncate text-[11px] text-slate-400">
-                        {l.delegation}, {l.governorate}
-                      </p>
-                    </div>
+              <li key={l.id}>
+                <button
+                  onClick={() => {
+                    onActiveChange(l.id);
+                    onListingClick(l.id);
+                  }}
+                  onMouseEnter={() => onActiveChange(l.id)}
+                  className={`flex w-full gap-3 p-3.5 text-left transition active:bg-slate-100 sm:p-3 sm:hover:bg-slate-50 ${
+                    activeId === l.id ? "bg-teal-50" : ""
+                  }`}
+                >
+                  <div className="relative h-[4.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-20 sm:w-24 sm:rounded-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={cover}
+                      alt={l.title}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
-                </li>
-              );
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-sm font-bold text-brand">
+                        {l.price} {t("currency")}
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {t("per_month")}
+                      </span>
+                      {l.distance_m !== undefined && (
+                        <span className="ml-auto text-[11px] font-medium text-blue-600">
+                          {(l.distance_m / 1000).toFixed(1)} km
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-sm font-medium text-slate-800">
+                      {l.title}
+                    </p>
+                    <p className="truncate text-xs text-slate-500">
+                      {t(propertyTypeKey(l.type))} · {l.bedrooms} {t("rooms_abbr")}{" "}
+                      · {l.area_sqm ?? "—"} m²
+                    </p>
+                    <p className="truncate text-[11px] text-slate-400">
+                      {l.delegation}, {l.governorate}
+                    </p>
+                  </div>
+                </button>
+              </li>
+            );
             })}
           </ul>
         )}
