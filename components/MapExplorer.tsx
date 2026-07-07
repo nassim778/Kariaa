@@ -431,13 +431,13 @@ export default function MapExplorer() {
 
       {/* Sidebar (listings) — bottom sheet on mobile, right panel on desktop */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-10 max-h-[min(72dvh,560px)] transition-transform duration-300 ease-out sm:absolute sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-[var(--karia-topbar)] sm:max-h-none sm:w-[380px] ${
+        className={`fixed inset-x-0 bottom-[var(--karia-mobile-nav)] z-20 flex h-[min(65dvh,520px)] flex-col transition-transform duration-300 ease-out sm:absolute sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-[var(--karia-topbar)] sm:h-auto sm:max-h-none sm:w-[380px] ${
           sidebarOpen
             ? "translate-y-0 sm:translate-x-0"
             : "translate-y-full sm:translate-y-0 sm:translate-x-full"
         }`}
       >
-        <div className="karia-sheet h-full overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-none sm:rounded-tl-2xl">
+        <div className="karia-sheet flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-none sm:rounded-tl-2xl">
           <Sidebar
             listings={listings}
             activeId={activeId}

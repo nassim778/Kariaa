@@ -28,7 +28,7 @@ export default function Sidebar({
 }: Props) {
   const { t } = useI18n();
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
         <div className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
       </div>
@@ -68,7 +68,7 @@ export default function Sidebar({
         )}
       </div>
 
-      <div className="karia-scroll flex-1 overflow-auto">
+      <div className="karia-scroll karia-scroll-y min-h-0 flex-1 overflow-y-auto">
         {listings.length === 0 ? (
           <div className="p-6 text-center text-sm text-slate-400">
             {t("none_here")}

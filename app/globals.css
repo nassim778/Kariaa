@@ -51,6 +51,11 @@ body {
   .karia-sheet {
     padding-bottom: max(0.75rem, var(--safe-bottom));
   }
+  .karia-scroll-y {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
 }
 
 /* MapLibre popups styled to match Karia's look. */
