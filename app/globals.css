@@ -55,6 +55,7 @@ body {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
+    overflow-y: auto;
   }
 }
 

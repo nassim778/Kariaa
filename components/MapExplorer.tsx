@@ -214,18 +214,20 @@ export default function MapExplorer() {
 
   return (
     <div className="relative h-screen-safe w-screen overflow-hidden [--karia-topbar:8.25rem]">
-      <MapView
-        listings={listings}
-        activeId={activeId}
-        poi={poi}
-        radiusM={radiusM}
-        basemap={basemap}
-        pickMode={pickPurpose !== null}
-        onActiveChange={setActiveId}
-        onListingClick={handleListingClick}
-        onBBoxChange={setBBox}
-        onMapPick={handleMapPick}
-      />
+      <div className={sidebarOpen ? "max-sm:pointer-events-none" : undefined}>
+        <MapView
+          listings={listings}
+          activeId={activeId}
+          poi={poi}
+          radiusM={radiusM}
+          basemap={basemap}
+          pickMode={pickPurpose !== null}
+          onActiveChange={setActiveId}
+          onListingClick={handleListingClick}
+          onBBoxChange={setBBox}
+          onMapPick={handleMapPick}
+        />
+      </div>
 
       {/* Brand + language — desktop top left */}
       <div className="pointer-events-none absolute left-3 top-3 z-20 hidden sm:left-4 sm:top-4 sm:block">
@@ -431,24 +433,22 @@ export default function MapExplorer() {
 
       {/* Sidebar (listings) — bottom sheet on mobile, right panel on desktop */}
       <div
-        className={`fixed inset-x-0 bottom-[var(--karia-mobile-nav)] z-20 flex h-[min(65dvh,520px)] flex-col transition-transform duration-300 ease-out sm:absolute sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-[var(--karia-topbar)] sm:h-auto sm:max-h-none sm:w-[380px] ${
+        className={`fixed inset-x-0 z-40 flex h-[min(65dvh,520px)] flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl transition-[bottom] duration-300 ease-out sm:absolute sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-[var(--karia-topbar)] sm:h-auto sm:max-h-none sm:w-[380px] sm:rounded-none sm:rounded-tl-2xl sm:transition-transform ${
           sidebarOpen
-            ? "translate-y-0 sm:translate-x-0"
-            : "translate-y-full sm:translate-y-0 sm:translate-x-full"
+            ? "bottom-[var(--karia-mobile-nav)] sm:translate-x-0"
+            : "pointer-events-none bottom-[calc(-1*min(65dvh,520px))] sm:pointer-events-auto sm:translate-x-full sm:bottom-0"
         }`}
       >
-        <div className="karia-sheet flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-none sm:rounded-tl-2xl">
-          <Sidebar
-            listings={listings}
-            activeId={activeId}
-            onActiveChange={setActiveId}
-            onListingClick={handleListingClick}
-            poi={poi}
-            radiusM={radiusM}
-            onClearPoi={() => setPoi(null)}
-            onClose={() => setSidebarOpen(false)}
-          />
-        </div>
+        <Sidebar
+          listings={listings}
+          activeId={activeId}
+          onActiveChange={setActiveId}
+          onListingClick={handleListingClick}
+          poi={poi}
+          radiusM={radiusM}
+          onClearPoi={() => setPoi(null)}
+          onClose={() => setSidebarOpen(false)}
+        />
       </div>
 
       {/* Toggle sidebar — desktop only */}
