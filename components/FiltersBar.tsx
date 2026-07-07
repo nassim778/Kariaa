@@ -23,35 +23,49 @@ export default function FiltersBar({
   poiActive,
 }: Props) {
   const { t: tr } = useI18n();
-  const toggleType = (t: PropertyType) => {
-    const cur = filters.types ?? [];
-    const next = cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t];
-    onChange({ ...filters, types: next.length ? next : undefined });
-  };
+  const selectedType =
+    filters.types?.length === 1 ? filters.types[0] : "";
 
   return (
     <div className="karia-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-      {/* Property types */}
-      <div className="flex shrink-0 gap-1.5 sm:flex-wrap">
-        {TYPES.map((t) => {
-          const active = filters.types?.includes(t);
-          return (
-            <button
-              key={t}
-              onClick={() => toggleType(t)}
-              className={`shrink-0 touch-manipulation rounded-full border px-3 py-1.5 text-xs font-medium transition active:scale-[0.98] ${
-                active
-                  ? "border-brand bg-brand text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-brand"
-              }`}
-            >
-              {tr(propertyTypeKey(t))}
-            </button>
-          );
-        })}
-      </div>
+      {/* Radius (only meaningful once a place is picked) */}
+      <select
+        value={radiusM}
+        onChange={(e) => onRadiusChange(Number(e.target.value))}
+        disabled={!poiActive}
+        className={`shrink-0 touch-manipulation rounded-full border px-3 py-1.5 text-xs outline-none transition ${
+          poiActive
+            ? "border-blue-300 bg-blue-50 text-blue-700"
+            : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"
+        }`}
+        title={poiActive ? tr("radius_enabled") : tr("radius_pick_place")}
+      >
+        {RADII.map((r) => (
+          <option key={r} value={r}>
+            {r / 1000} {tr("km")}
+          </option>
+        ))}
+      </select>
 
-      <div className="hidden h-5 w-px shrink-0 bg-slate-200 sm:block" />
+      {/* Property type */}
+      <select
+        value={selectedType}
+        onChange={(e) => {
+          const value = e.target.value as PropertyType | "";
+          onChange({
+            ...filters,
+            types: value ? [value] : undefined,
+          });
+        }}
+        className="shrink-0 touch-manipulation rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 outline-none"
+      >
+        <option value="">{tr("field_type")}</option>
+        {TYPES.map((t) => (
+          <option key={t} value={t}>
+            {tr(propertyTypeKey(t))}
+          </option>
+        ))}
+      </select>
 
       {/* Price */}
       <div className="flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1.5">
@@ -101,25 +115,6 @@ export default function FiltersBar({
         <option value="2">2+</option>
         <option value="3">3+</option>
         <option value="4">4+</option>
-      </select>
-
-      {/* Radius (only meaningful once a place is picked) */}
-      <select
-        value={radiusM}
-        onChange={(e) => onRadiusChange(Number(e.target.value))}
-        disabled={!poiActive}
-        className={`shrink-0 touch-manipulation rounded-full border px-3 py-1.5 text-xs outline-none transition ${
-          poiActive
-            ? "border-blue-300 bg-blue-50 text-blue-700"
-            : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"
-        }`}
-        title={poiActive ? tr("radius_enabled") : tr("radius_pick_place")}
-      >
-        {RADII.map((r) => (
-          <option key={r} value={r}>
-            {r / 1000} {tr("km")}
-          </option>
-        ))}
       </select>
     </div>
   );

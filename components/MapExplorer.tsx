@@ -246,7 +246,7 @@ export default function MapExplorer() {
         <div className="pointer-events-auto bg-gradient-to-b from-white/95 via-white/90 to-transparent px-3 pb-2 pt-safe backdrop-blur">
           <div className="flex items-center gap-2">
             <BrandLogo size={32} />
-            <LanguageSwitcher className="w-auto min-w-[5.5rem]" />
+            <LanguageSwitcher className="ml-auto w-auto" />
           </div>
 
           {!navExpanded ? (
