@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "Karia",
+    "slug": "karia",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "karia",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "tn.karia.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Karia uses your location to center the map and find rentals near you.",
+        "NSPhotoLibraryUsageDescription": "Karia needs access to your photos so you can add pictures to your listings.",
+        "NSCameraUsageDescription": "Karia needs camera access so you can take pictures for your listings."
+      }
+    },
+    "android": {
+      "package": "tn.karia.app",
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "@maplibre/maplibre-react-native",
+        {}
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Karia uses your location to center the map and find rentals near you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Karia needs access to your photos so you can add pictures to your listings."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "f0a5cdd7-2a44-457c-94d1-42aa85688796"
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -13,6 +13,8 @@ import { propertyTypeKey } from "@/lib/i18n";
 
 type Tab = "listings" | "users";
 
+const PAGE_SIZE = 25;
+
 export default function AdminPage() {
   const { user, isAdmin, loading: authLoading, configured } = useAuth();
   const { t } = useI18n();
@@ -20,6 +22,30 @@ export default function AdminPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const currentTotal = tab === "listings" ? listings.length : profiles.length;
+  const hasMore = visibleCount < currentTotal;
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [tab]);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => prev + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, tab, visibleCount, listings.length, profiles.length]);
 
   const load = useCallback(async () => {
     const supabase = getBrowserSupabase();
@@ -162,7 +188,7 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {listings.map((l) => (
+                  {listings.slice(0, visibleCount).map((l) => (
                     <tr key={l.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800">{l.title}</p>
@@ -214,6 +240,15 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+            {hasMore && (
+              <div
+                ref={sentinelRef}
+                className="flex items-center justify-center gap-2 border-t border-slate-100 py-4 text-xs text-slate-400"
+              >
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+                {t("admin_loading_more")}
+              </div>
+            )}
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -227,7 +262,7 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {profiles.map((p) => (
+                  {profiles.slice(0, visibleCount).map((p) => (
                     <tr key={p.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
                         {p.email ?? p.id.slice(0, 8)}
@@ -267,6 +302,15 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+            {hasMore && (
+              <div
+                ref={sentinelRef}
+                className="flex items-center justify-center gap-2 border-t border-slate-100 py-4 text-xs text-slate-400"
+              >
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+                {t("admin_loading_more")}
+              </div>
+            )}
           </div>
         )}
       </main>

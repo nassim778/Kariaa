@@ -6,6 +6,7 @@ services:
     runtime: node
     plan: free
     region: frankfurt
+    # Install the whole workspace at the repo root, then build the web app.
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /

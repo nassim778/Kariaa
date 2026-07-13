@@ -1,6 +1,9 @@
 # Alternative free host: https://www.netlify.com (not Vercel)
+# Monorepo: the Next.js app lives in apps/web.
 [build]
+  base = "apps/web"
   command = "npm run build"
+  publish = ".next"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
