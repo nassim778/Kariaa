@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { getBrowserSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import { isProfileAdmin, Profile } from "@/lib/profile";
 
@@ -19,6 +19,9 @@ interface AuthContextValue {
   isAdmin: boolean;
   loading: boolean;
   configured: boolean;
+  /** True after clicking an email password-recovery link until password is updated. */
+  passwordRecovery: boolean;
+  clearPasswordRecovery: () => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -30,6 +33,8 @@ const AuthContext = createContext<AuthContextValue>({
   isAdmin: false,
   loading: true,
   configured: false,
+  passwordRecovery: false,
+  clearPasswordRecovery: () => {},
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -38,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   const refreshProfile = useCallback(async () => {
     const supabase = getBrowserSupabase();
@@ -64,9 +70,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(data.session);
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-    });
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, s) => {
+        if (event === "PASSWORD_RECOVERY") {
+          setPasswordRecovery(true);
+        }
+        if (event === "SIGNED_OUT") {
+          setPasswordRecovery(false);
+        }
+        setSession(s);
+      },
+    );
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -74,6 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (loading) return;
     refreshProfile();
   }, [loading, refreshProfile]);
+
+  const clearPasswordRecovery = useCallback(() => {
+    setPasswordRecovery(false);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -83,13 +101,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin: isProfileAdmin(profile),
       loading,
       configured: isSupabaseConfigured,
+      passwordRecovery,
+      clearPasswordRecovery,
       signOut: async () => {
         await getBrowserSupabase()?.auth.signOut();
         setProfile(null);
+        setPasswordRecovery(false);
       },
       refreshProfile,
     }),
-    [session, profile, loading, refreshProfile]
+    [session, profile, loading, passwordRecovery, clearPasswordRecovery, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

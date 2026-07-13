@@ -110,7 +110,12 @@ Your URL will look like: `https://karia-xxxx.onrender.com`
 In [Supabase Dashboard](https://supabase.com/dashboard) → your project → **Authentication → URL Configuration**:
 
 - **Site URL:** `https://YOUR-RENDER-URL.onrender.com`
-- **Redirect URLs:** add `https://YOUR-RENDER-URL.onrender.com/**`
+- **Redirect URLs:** add `https://YOUR-RENDER-URL.onrender.com/**` and specifically `https://YOUR-RENDER-URL.onrender.com/reset-password`
+
+Password reset (email) lands on `/reset-password` where the user must set a new password (not auto-login only).
+
+Phone/SMS password reset is deferred for a later release.
+
 
 Under **Project Settings → API**, confirm the anon key matches what you set on Render.
 

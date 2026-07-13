@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import PasswordRecoveryRedirect from "@/components/PasswordRecoveryRedirect";
 import { BRAND } from "@/lib/brand";
+
 
 export const metadata: Metadata = {
   title: "كرية — Location immobilière sur carte en Tunisie",
@@ -34,7 +36,10 @@ export default function RootLayout({
     <html lang="fr">
       <body className="font-sans antialiased text-slate-800">
         <LanguageProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <PasswordRecoveryRedirect />
+            {children}
+          </AuthProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -57,11 +57,20 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       if (mode === "reset") {
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+        const redirectTo = legalBaseUrl
+          ? `${legalBaseUrl.replace(/\/$/, "")}/reset-password`
+          : undefined;
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          email.trim(),
+          redirectTo ? { redirectTo } : undefined,
+        );
         if (error) throw error;
         setInfo(t("reset_password_sent"));
       } else if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+        });
         if (error) throw error;
         if (data.session) {
           router.back();
@@ -71,7 +80,7 @@ export default function AuthScreen() {
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim(),
           password,
         });
         if (error) throw error;

@@ -48,9 +48,6 @@ export default function TermsPage() {
         </Link>
         <LanguageSwitcher />
       </div>
-      <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-        {t("legal_placeholder_notice")}
-      </p>
       <h1 className="mb-4 text-2xl font-bold text-slate-900">{t("terms_title")}</h1>
       <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
         {text}
