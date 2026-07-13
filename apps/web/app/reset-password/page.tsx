@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import BrandLogo from "@/components/BrandLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useAuth } from "@/components/AuthProvider";
@@ -11,12 +11,12 @@ import { getBrowserSupabase } from "@/lib/supabaseClient";
 
 /**
  * Landing page for email password-recovery links.
- * Supabase exchanges the link for a session and fires PASSWORD_RECOVERY;
- * we then require the user to set a new password (instead of just logging in).
+ * Prefer /auth/callback?next=/reset-password (PKCE). Falls back to hash recovery.
  */
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const { t } = useI18n();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { passwordRecovery, clearPasswordRecovery, loading: authLoading, session } =
     useAuth();
   const [password, setPassword] = useState("");
@@ -27,11 +27,20 @@ export default function ResetPasswordPage() {
   const [ready, setReady] = useState(false);
   const [invalid, setInvalid] = useState(false);
 
+  const urlError = searchParams.get("error");
+  const fromCallback = searchParams.get("recovery") === "1";
+
   useEffect(() => {
     if (authLoading) return;
-    // Give the client a moment to process the URL hash / cookies from the link.
+
+    if (urlError) {
+      setReady(true);
+      setInvalid(true);
+      return;
+    }
+
     const timer = setTimeout(() => {
-      if (passwordRecovery || session) {
+      if (passwordRecovery || fromCallback || session) {
         setReady(true);
         setInvalid(false);
       } else {
@@ -40,7 +49,7 @@ export default function ResetPasswordPage() {
       }
     }, 800);
     return () => clearTimeout(timer);
-  }, [authLoading, passwordRecovery, session]);
+  }, [authLoading, passwordRecovery, session, urlError, fromCallback]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -73,16 +82,15 @@ export default function ResetPasswordPage() {
     }
   };
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-8">
-      <div className="mb-8 flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2">
-          <BrandLogo size={36} />
-          <span className="font-semibold text-brand">Karia</span>
-        </Link>
-        <LanguageSwitcher />
-      </div>
+  const showForm =
+    ready &&
+    !authLoading &&
+    !urlError &&
+    (passwordRecovery || fromCallback || session) &&
+    !invalid;
 
+  return (
+    <>
       <h1 className="text-2xl font-bold text-slate-900">
         {t("reset_password_title")}
       </h1>
@@ -90,16 +98,7 @@ export default function ResetPasswordPage() {
 
       {!ready || authLoading ? (
         <p className="mt-8 text-sm text-slate-500">{t("reset_recovery_wait")}</p>
-      ) : invalid && !passwordRecovery && !session ? (
-        <div className="mt-8 space-y-4">
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {t("reset_recovery_invalid")}
-          </p>
-          <Link href="/" className="inline-block text-sm font-medium text-brand">
-            {t("back_home")}
-          </Link>
-        </div>
-      ) : (
+      ) : showForm ? (
         <form onSubmit={submit} className="mt-8 space-y-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">
@@ -152,7 +151,37 @@ export default function ResetPasswordPage() {
             {t("reset_save_password")}
           </button>
         </form>
+      ) : (
+        <div className="mt-8 space-y-4">
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {t("reset_recovery_invalid")}
+          </p>
+          <Link href="/" className="inline-block text-sm font-medium text-brand">
+            {t("back_home")}
+          </Link>
+        </div>
       )}
+    </>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <main className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-8">
+      <div className="mb-8 flex items-center justify-between gap-3">
+        <Link href="/" className="flex items-center gap-2">
+          <BrandLogo size={36} />
+          <span className="font-semibold text-brand">Karia</span>
+        </Link>
+        <LanguageSwitcher />
+      </div>
+      <Suspense
+        fallback={
+          <p className="mt-8 text-sm text-slate-500">…</p>
+        }
+      >
+        <ResetPasswordForm />
+      </Suspense>
     </main>
   );
 }

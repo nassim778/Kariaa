@@ -58,7 +58,7 @@ export default function AuthScreen() {
     try {
       if (mode === "reset") {
         const redirectTo = legalBaseUrl
-          ? `${legalBaseUrl.replace(/\/$/, "")}/reset-password`
+          ? `${legalBaseUrl.replace(/\/$/, "")}/auth/callback?next=/reset-password`
           : undefined;
         const { error } = await supabase.auth.resetPasswordForEmail(
           email.trim(),

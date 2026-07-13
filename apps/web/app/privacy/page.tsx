@@ -6,7 +6,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/components/LanguageProvider";
 
 const BODY = {
-  fr: `Ceci est un texte provisoire de politique de confidentialité pour Karia (Tunisie).
+  fr: ` politique de confidentialité pour Karia (Tunisie).
 
 Karia collecte les données nécessaires au fonctionnement du service de location sur carte : compte (e-mail), annonces (titre, description, photos, localisation, téléphone), et préférences de langue.
 
@@ -15,7 +15,7 @@ Les données de localisation sont utilisées pour afficher les biens sur la cart
 Vous pouvez demander la suppression de votre compte et des données associées depuis l'application.
 
 Ce document doit être relu et remplacé par un texte juridique définitif avant un lancement public.`,
-  en: `This is placeholder Privacy Policy text for Karia (Tunisia).
+  en: `Privacy Policy text for Karia (Tunisia).
 
 Karia collects data needed to operate the map-based rental service: account (email), listings (title, description, photos, location, phone), and language preferences.
 
@@ -24,7 +24,7 @@ Location data is used to place properties on the map. Photos are stored in a sec
 You may request deletion of your account and associated data from within the app.
 
 Replace this document with final legal copy before public launch.`,
-  tn: `هذا نص مؤقت لسياسة الخصوصية متاع كارية (تونس).
+  tn: `سياسة الخصوصية كرية (تونس).
 
 نخدموا بالمعطيات اللازمة للخدمة: الحساب (الإيميل)، الإعلانات (العنوان، الوصف، الصور، الموقع، التليفون)، ولغة الواجهة.
 

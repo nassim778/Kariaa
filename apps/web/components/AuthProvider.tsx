@@ -69,6 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
+      if (
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get("recovery") === "1"
+      ) {
+        setPasswordRecovery(true);
+      }
     });
     const { data: sub } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, s) => {

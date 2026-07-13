@@ -109,10 +109,16 @@ Your URL will look like: `https://karia-xxxx.onrender.com`
 
 In [Supabase Dashboard](https://supabase.com/dashboard) → your project → **Authentication → URL Configuration**:
 
-- **Site URL:** `https://YOUR-RENDER-URL.onrender.com`
-- **Redirect URLs:** add `https://YOUR-RENDER-URL.onrender.com/**` and specifically `https://YOUR-RENDER-URL.onrender.com/reset-password`
+- **Site URL:** `https://kariaa.onrender.com` (or your Render URL)
+- **Redirect URLs** (add all of these; without them, reset emails fall back to `/` and look “broken”):
+  - `https://kariaa.onrender.com/**`
+  - `https://kariaa.onrender.com/auth/callback`
+  - `https://kariaa.onrender.com/auth/callback?next=/reset-password`
+  - `https://kariaa.onrender.com/reset-password`
 
-Password reset (email) lands on `/reset-password` where the user must set a new password (not auto-login only).
+Password reset (email) goes through `/auth/callback` then `/reset-password`, where the user must set a new password.
+
+If you see `otp_expired` / “Email link is invalid or has expired”: request a **fresh** link and open it once (some mail apps prefetch links and burn the one-time token). Do not reuse an old email.
 
 Phone/SMS password reset is deferred for a later release.
 

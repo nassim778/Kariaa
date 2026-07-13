@@ -6,7 +6,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/components/LanguageProvider";
 
 const BODY = {
-  fr: `Ceci est un texte provisoire des conditions d'utilisation de Karia.
+  fr: `conditions d'utilisation de Karia.
 
 Karia est une plateforme de mise en relation pour la location immobilière en Tunisie. Les annonces sont publiées par des utilisateurs ; Karia n'est pas partie aux contrats de location.
 
@@ -15,7 +15,7 @@ Vous vous engagez à publier des informations exactes, à ne pas publier de cont
 Karia peut modérer ou retirer des annonces signalées. L'utilisation abusive du service peut entraîner la suspension du compte.
 
 Remplacez ce texte par des conditions juridiques définitives avant le lancement public.`,
-  en: `This is placeholder Terms of Service text for Karia.
+  en: `Terms of Service text for Karia.
 
 Karia is a map-based rental listing platform for Tunisia. Listings are published by users; Karia is not a party to rental contracts.
 
@@ -24,7 +24,7 @@ You agree to publish accurate information, avoid unlawful content, and respect o
 Karia may moderate or remove reported listings. Abuse of the service may lead to account suspension.
 
 Replace this text with final legal terms before public launch.`,
-  tn: `هذا نص مؤقت لشروط استخدام كارية.
+  tn: ` شروط استخدام كرية.
 
 كارية منصة إعلانات كراء على الخريطة في تونس. الإعلانات ينشروها المستخدمين؛ كارية مش طرف في عقود الكراء.
 
