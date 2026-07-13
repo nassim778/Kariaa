@@ -14,12 +14,15 @@ import { listingCoverOrPlaceholder } from "@/lib/listingImages";
 import { Listing, sizeLabel } from "@/lib/types";
 
 export default function MyListingsPage() {
-  const { user, isAdmin, loading: authLoading, configured } = useAuth();
+  const { user, isAdmin, loading: authLoading, configured, session, signOut } =
+    useAuth();
   const { t } = useI18n();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
   const [editing, setEditing] = useState<Listing | null>(null);
+  const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = getBrowserSupabase();
@@ -41,6 +44,30 @@ export default function MyListingsPage() {
   useEffect(() => {
     if (!authLoading) load();
   }, [authLoading, load]);
+
+  const deleteAccount = async () => {
+    if (!session?.access_token) return;
+    if (!window.confirm(t("delete_account_confirm"))) return;
+    setDeleting(true);
+    setDeleteMsg(null);
+    try {
+      const res = await fetch("/api/account", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setDeleteMsg(data?.error?.message ?? t("generic_error"));
+        return;
+      }
+      await signOut();
+      setDeleteMsg(t("delete_account_done"));
+    } catch {
+      setDeleteMsg(t("generic_error"));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="h-screen-safe overflow-auto bg-slate-50">
@@ -146,6 +173,23 @@ export default function MyListingsPage() {
               </div>
             );
             })}
+          </div>
+        )}
+        {user && (
+          <div className="mt-8 rounded-2xl border border-red-100 bg-white p-4">
+            <p className="text-sm font-medium text-slate-800">{t("delete_account")}</p>
+            <p className="mt-1 text-xs text-slate-500">{t("delete_account_confirm")}</p>
+            {deleteMsg && (
+              <p className="mt-2 text-xs text-slate-600">{deleteMsg}</p>
+            )}
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={deleteAccount}
+              className="mt-3 rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
+            >
+              {t("delete_account")}
+            </button>
           </div>
         )}
       </main>

@@ -1,29 +1,20 @@
 "use client";
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { env } from "./env";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-export const isSupabaseConfigured = Boolean(url && anonKey);
+export const isSupabaseConfigured = env.isSupabaseConfigured;
 
 let client: SupabaseClient | null = null;
 
 /**
- * Browser-side Supabase client (singleton) with persisted auth session.
- * Returns null when the project isn't configured (demo mode), so auth-related
- * UI can degrade gracefully.
+ * Browser Supabase client with cookie-backed sessions (readable by middleware).
  */
 export function getBrowserSupabase(): SupabaseClient | null {
-  if (!isSupabaseConfigured) return null;
+  if (!env.supabaseUrl || !env.supabaseAnonKey) return null;
   if (!client) {
-    client = createClient(url as string, anonKey as string, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    });
+    client = createBrowserClient(env.supabaseUrl, env.supabaseAnonKey);
   }
   return client;
 }

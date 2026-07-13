@@ -34,6 +34,10 @@ export default function PlaceSearch({ onSelect }: Props) {
           `/api/geocode?q=${encodeURIComponent(trimmed)}&lang=${locale}`
         );
         const data = await res.json();
+        if (!res.ok) {
+          setResults([]);
+          return;
+        }
         setResults(data.places ?? []);
         setOpen(true);
       } catch {

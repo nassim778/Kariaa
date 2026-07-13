@@ -7,3 +7,4 @@ export * from "./nominatimLang";
 export * from "./supabaseErrors";
 export * from "./queries";
 export * from "./mapConfig";
+export * from "./validation";

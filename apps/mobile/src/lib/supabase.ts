@@ -79,6 +79,15 @@ export function getSupabase(): SupabaseClient | null {
   return client;
 }
 
-/** Optional geocoding proxy base URL (a deployed Karia web app). */
+/** Optional geocoding / API proxy base URL (a deployed Karia web app). */
 export const geocodeProxyBaseUrl =
   process.env.EXPO_PUBLIC_GEOCODE_BASE_URL || undefined;
+
+/** Base URL for privacy/terms pages (defaults to geocode proxy). */
+export const legalBaseUrl =
+  process.env.EXPO_PUBLIC_LEGAL_BASE_URL ||
+  process.env.EXPO_PUBLIC_GEOCODE_BASE_URL ||
+  undefined;
+
+/** Base URL for authenticated API routes (account delete, report). */
+export const apiBaseUrl = geocodeProxyBaseUrl || legalBaseUrl;

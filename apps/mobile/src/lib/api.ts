@@ -32,16 +32,17 @@ export function reverseLookup(
   return reverseGeocode(lat, lng, locale, { proxyBaseUrl: geocodeProxyBaseUrl });
 }
 
-/** Fetch a single listing by id (Supabase, with demo fallback). */
+/** Fetch a single listing by id (Supabase when configured; demo otherwise). */
 export async function getListingById(id: string): Promise<Listing | null> {
   const supabase = getSupabase();
   if (supabase) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("listings")
       .select("*")
       .eq("id", id)
       .maybeSingle();
-    if (data) return data as Listing;
+    if (error) throw error;
+    return (data as Listing) ?? null;
   }
   return DEMO_LISTINGS.find((l) => l.id === id) ?? null;
 }

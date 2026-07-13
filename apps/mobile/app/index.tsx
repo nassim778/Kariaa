@@ -32,7 +32,7 @@ type PickPurpose = "poi" | "listing" | null;
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
-  const { user, configured } = useAuth();
+  const { user, configured, signOut } = useAuth();
   const { t } = useI18n();
 
   const [listings, setListings] = useState<Listing[]>([]);
@@ -45,6 +45,7 @@ export default function MapScreen() {
   const [pickPurpose, setPickPurpose] = useState<PickPurpose>(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const sheetRef = useRef<BottomSheet>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -54,14 +55,20 @@ export default function MapScreen() {
     if (!poi && !bbox) return;
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
-      const params = poi
-        ? { filters, center: { lat: poi.lat, lng: poi.lng, radiusM } }
-        : { filters, bbox: bbox ?? undefined };
-      const { listings: found } = await fetchListings(params);
-      setListings(found);
+      try {
+        const params = poi
+          ? { filters, center: { lat: poi.lat, lng: poi.lng, radiusM } }
+          : { filters, bbox: bbox ?? undefined };
+        const { listings: found } = await fetchListings(params);
+        setFetchError(null);
+        setListings(found);
+      } catch (e) {
+        setFetchError(t("backend_unavailable"));
+        setListings([]);
+      }
     }, 300);
     return () => clearTimeout(debounceRef.current);
-  }, [filters, poi, radiusM, bbox, refreshKey]);
+  }, [filters, poi, radiusM, bbox, refreshKey, t]);
 
   // Refetch when returning to the map (e.g. after adding/editing a listing).
   useFocusEffect(
@@ -136,6 +143,16 @@ export default function MapScreen() {
         </View>
 
         <PlaceSearch onSelect={handleSelectPlace} />
+
+        {fetchError ? (
+          <Pressable
+            onPress={() => setRefreshKey((k) => k + 1)}
+            style={styles.errorBanner}
+          >
+            <Text style={styles.errorText}>{fetchError}</Text>
+            <Text style={styles.errorRetry}>{t("retry")}</Text>
+          </Pressable>
+        ) : null}
 
         <View style={styles.actionRow}>
           <Pressable
@@ -238,6 +255,16 @@ export default function MapScreen() {
             {user ? t("my_listings") : t("login")}
           </Text>
         </Pressable>
+        {user ? (
+          <Pressable
+            style={styles.sideLink}
+            onPress={async () => {
+              await signOut();
+            }}
+          >
+            <Text style={styles.sideLinkText}>{t("logout")}</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {/* Listings bottom sheet */}
@@ -312,6 +339,19 @@ const styles = StyleSheet.create({
   },
   brand: { fontSize: 18, fontWeight: "800", color: colors.brand },
   brandSub: { fontSize: 11, fontWeight: "500", color: colors.slate400 },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    borderRadius: rad.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  errorText: { flex: 1, fontSize: 12, color: "#991b1b", fontWeight: "500" },
+  errorRetry: { fontSize: 12, fontWeight: "700", color: "#b91c1c" },
   actionRow: { flexDirection: "row", gap: 8 },
   actionBtn: {
     borderWidth: 1,

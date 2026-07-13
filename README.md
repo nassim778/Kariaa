@@ -23,14 +23,38 @@ within a chosen radius (default **2 km**) around it.
 
 ## Getting started
 
-```bash
-npm install
-npm run dev
+This repo is an npm workspaces monorepo:
+
+```
+apps/web       Next.js web app (Render)
+apps/mobile    Expo React Native app
+packages/shared  Shared types, i18n, queries, validation
+supabase/      schema.sql + migrations/
 ```
 
-With no environment variables set, Karia serves the
-bundled demo listings (see the "Données démo" badge), so everything works out of
-the box.
+```bash
+npm install
+npm run dev          # web at http://localhost:3000
+```
+
+With no environment variables set (development only), Karia serves bundled demo
+listings. If Supabase is configured and the backend fails, the UI shows an error
+instead of silent demo data.
+
+### Database
+
+- Greenfield: run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor, **or**
+- Incremental: `SUPABASE_PROJECT_REF=… SUPABASE_DB_PASSWORD=… npm run db:migrate`
+
+New changes go in `supabase/migrations/` only. Refresh `schema.sql` when you want a full snapshot.
+
+### Mobile
+
+See [`apps/mobile/README.md`](apps/mobile/README.md). Set EAS Secrets for
+`EXPO_PUBLIC_SUPABASE_*`, `EXPO_PUBLIC_GEOCODE_BASE_URL`, and
+`EXPO_PUBLIC_LEGAL_BASE_URL` before production builds.
+
+API contract: [`docs/api.md`](docs/api.md).
 
 ## Connecting Supabase (real data)
 
@@ -38,15 +62,16 @@ the box.
 2. In the SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It enables
    PostGIS, creates the `listings` table + spatial indexes, the two search RPCs
    (`listings_in_bbox`, `listings_in_radius`), row-level security, and seed rows.
-3. Copy `.env.local.example` to `.env.local` and fill in:
+   Then apply newer migrations with `npm run db:migrate` (needs `SUPABASE_PROJECT_REF` + `SUPABASE_DB_PASSWORD`).
+3. Copy `apps/web/.env.local.example` to `apps/web/.env.local` and fill in:
 
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR-ANON-KEY
+   SUPABASE_SERVICE_ROLE_KEY=YOUR-SERVICE-ROLE-KEY
    ```
 
-4. Restart `npm run dev`. The badge now reads "Supabase · PostGIS" and all map
-   queries hit the database.
+4. Restart `npm run dev`.
 
 ## Deploy online (free, no Vercel)
 
@@ -72,6 +97,7 @@ Repo: `https://github.com/nassim778/Kariaa.git`
    |-----|-------|
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your Supabase anon key |
+   | `SUPABASE_SERVICE_ROLE_KEY` | service role key (account deletion) |
 
 5. Click **Create Web Service**. First deploy takes ~5–10 minutes.
 

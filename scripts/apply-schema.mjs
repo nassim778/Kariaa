@@ -2,26 +2,59 @@ import { readFileSync } from "node:fs";
 import { Client } from "pg";
 
 const PASSWORD = process.env.SUPABASE_DB_PASSWORD;
-const REF = "ahxxqllargtiyfajytwg";
+const REF = process.env.SUPABASE_PROJECT_REF;
 if (!PASSWORD) {
   console.error("Set SUPABASE_DB_PASSWORD env var");
+  process.exit(1);
+}
+if (!REF) {
+  console.error("Set SUPABASE_PROJECT_REF env var (e.g. yourprojectref)");
   process.exit(1);
 }
 
 const file = process.env.FILE || "../supabase/schema.sql";
 const sqlPath = file.startsWith("..") ? new URL(file, import.meta.url) : file;
 const sql = readFileSync(sqlPath, "utf8");
-console.log(`Applying SQL from: ${file}`);
+console.log(`Applying SQL from: ${file} (project ${REF})`);
 
-// Try direct connection first, then common pooler regions (IPv4-friendly).
 const candidates = [
   { label: "direct", host: `db.${REF}.supabase.co`, port: 5432, user: "postgres" },
-  { label: "pooler eu-central-1", host: "aws-0-eu-central-1.pooler.supabase.com", port: 5432, user: `postgres.${REF}` },
-  { label: "pooler eu-west-1", host: "aws-0-eu-west-1.pooler.supabase.com", port: 5432, user: `postgres.${REF}` },
-  { label: "pooler eu-west-2", host: "aws-0-eu-west-2.pooler.supabase.com", port: 5432, user: `postgres.${REF}` },
-  { label: "pooler eu-west-3", host: "aws-0-eu-west-3.pooler.supabase.com", port: 5432, user: `postgres.${REF}` },
-  { label: "pooler us-east-1", host: "aws-0-us-east-1.pooler.supabase.com", port: 5432, user: `postgres.${REF}` },
-  { label: "pooler us-east-2", host: "aws-0-us-east-2.pooler.supabase.com", port: 5432, user: `postgres.${REF}` },
+  {
+    label: "pooler eu-central-1",
+    host: "aws-0-eu-central-1.pooler.supabase.com",
+    port: 5432,
+    user: `postgres.${REF}`,
+  },
+  {
+    label: "pooler eu-west-1",
+    host: "aws-0-eu-west-1.pooler.supabase.com",
+    port: 5432,
+    user: `postgres.${REF}`,
+  },
+  {
+    label: "pooler eu-west-2",
+    host: "aws-0-eu-west-2.pooler.supabase.com",
+    port: 5432,
+    user: `postgres.${REF}`,
+  },
+  {
+    label: "pooler eu-west-3",
+    host: "aws-0-eu-west-3.pooler.supabase.com",
+    port: 5432,
+    user: `postgres.${REF}`,
+  },
+  {
+    label: "pooler us-east-1",
+    host: "aws-0-us-east-1.pooler.supabase.com",
+    port: 5432,
+    user: `postgres.${REF}`,
+  },
+  {
+    label: "pooler us-east-2",
+    host: "aws-0-us-east-2.pooler.supabase.com",
+    port: 5432,
+    user: `postgres.${REF}`,
+  },
 ];
 
 async function tryConnect(c) {
@@ -64,7 +97,9 @@ try {
   }
   await client.query(sql);
   console.log("\nSchema applied successfully.");
-  const { rows } = await client.query("select count(*)::int as n from public.listings");
+  const { rows } = await client.query(
+    "select count(*)::int as n from public.listings"
+  );
   console.log(`listings rows: ${rows[0].n}`);
 } catch (e) {
   console.error("\nSchema execution error:", e.message);

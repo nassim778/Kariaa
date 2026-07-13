@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import {
+  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -17,14 +18,15 @@ import {
 } from "@karia/shared";
 import { useAuth } from "@/providers/AuthProvider";
 import { useI18n } from "@/providers/LanguageProvider";
-import { getSupabase } from "@/lib/supabase";
+import { apiBaseUrl, getSupabase } from "@/lib/supabase";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Spinner from "@/components/Spinner";
 import { colors, radius as rad, PLACEHOLDER_IMAGE } from "@/theme";
 
 export default function MyListingsScreen() {
   const insets = useSafeAreaInsets();
-  const { user, isAdmin, loading: authLoading, configured } = useAuth();
+  const { user, isAdmin, loading: authLoading, configured, session, signOut } =
+    useAuth();
   const { t } = useI18n();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +90,61 @@ export default function MyListingsScreen() {
           keyExtractor={(l) => l.id}
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}
           ListEmptyComponent={<Empty text={t("no_listings_yet")} />}
+          ListFooterComponent={
+            user ? (
+              <View style={styles.dangerZone}>
+                <Pressable
+                  style={styles.logoutBtn}
+                  onPress={async () => {
+                    await signOut();
+                    router.replace("/");
+                  }}
+                >
+                  <Text style={styles.logoutText}>{t("logout")}</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.deleteBtn}
+                  onPress={() => {
+                    Alert.alert(t("delete_account"), t("delete_account_confirm"), [
+                      { text: t("cancel"), style: "cancel" },
+                      {
+                        text: t("delete_account"),
+                        style: "destructive",
+                        onPress: async () => {
+                          if (!session?.access_token || !apiBaseUrl) {
+                            Alert.alert(
+                              t("generic_error"),
+                              "Set EXPO_PUBLIC_GEOCODE_BASE_URL and service role on web"
+                            );
+                            return;
+                          }
+                          const res = await fetch(`${apiBaseUrl}/api/account`, {
+                            method: "DELETE",
+                            headers: {
+                              Authorization: `Bearer ${session.access_token}`,
+                            },
+                          });
+                          if (!res.ok) {
+                            const data = await res.json().catch(() => ({}));
+                            Alert.alert(
+                              t("generic_error"),
+                              data?.error?.message ?? t("generic_error")
+                            );
+                            return;
+                          }
+                          await signOut();
+                          Alert.alert(t("delete_account_done"));
+                          router.replace("/");
+                        },
+                      },
+                    ]);
+                  }}
+                >
+                  <Text style={styles.deleteText}>{t("delete_account")}</Text>
+                </Pressable>
+              </View>
+            ) : null
+          }
           renderItem={({ item: l }) => (
             <View style={styles.card}>
               <Image
@@ -234,4 +291,23 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   ctaText: { color: colors.white, fontWeight: "600" },
+  dangerZone: { marginTop: 24, gap: 10 },
+  logoutBtn: {
+    borderWidth: 1,
+    borderColor: colors.slate200,
+    borderRadius: rad.md,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: colors.white,
+  },
+  logoutText: { color: colors.slate600, fontWeight: "600" },
+  deleteBtn: {
+    borderRadius: rad.md,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+  },
+  deleteText: { color: colors.red, fontWeight: "700" },
 });

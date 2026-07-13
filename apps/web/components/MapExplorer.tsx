@@ -39,6 +39,7 @@ export default function MapExplorer() {
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const { user, isAdmin, configured, signOut } = useAuth();
   const { t } = useI18n();
@@ -93,8 +94,15 @@ export default function MapExplorer() {
       try {
         const res = await fetch(`/api/listings?${qs}`);
         const data = await res.json();
+        if (!res.ok) {
+          setFetchError(data?.error?.message ?? t("backend_unavailable"));
+          setListings([]);
+          return;
+        }
+        setFetchError(null);
         setListings(data.listings ?? []);
       } catch {
+        setFetchError(t("backend_unavailable"));
         setListings([]);
       }
     }, 250);
@@ -226,6 +234,21 @@ export default function MapExplorer() {
         onBBoxChange={setBBox}
         onMapPick={handleMapPick}
       />
+
+      {fetchError && (
+        <div className="pointer-events-none absolute inset-x-0 top-[var(--karia-topbar)] z-30 flex justify-center px-3 sm:top-20">
+          <div className="pointer-events-auto flex max-w-lg items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 shadow-md">
+            <span className="flex-1">{fetchError}</span>
+            <button
+              type="button"
+              onClick={() => setRefreshKey((k) => k + 1)}
+              className="shrink-0 rounded-lg bg-red-700 px-2.5 py-1 text-xs font-medium text-white"
+            >
+              {t("retry")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Brand + language — desktop top left */}
       <div className="pointer-events-none absolute left-3 top-3 z-20 hidden sm:left-4 sm:top-4 sm:block">

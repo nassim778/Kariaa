@@ -32,12 +32,15 @@ npx expo install --fix
 
 | Variable | Purpose |
 | --- | --- |
-| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL. Empty → demo mode. |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key. Empty → demo mode. |
-| `EXPO_PUBLIC_GEOCODE_BASE_URL` | Optional. Base URL of a deployed Karia web app; its `/api/geocode` + `/api/reverse-geocode` routes are used as a Nominatim proxy. When empty, Nominatim is called directly from the device. |
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL. Empty → demo mode in `__DEV__` only. |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key. Empty → demo mode in `__DEV__` only. |
+| `EXPO_PUBLIC_GEOCODE_BASE_URL` | Deployed web app URL (Nominatim proxy + `/api/account` + `/api/report`). |
+| `EXPO_PUBLIC_LEGAL_BASE_URL` | Optional override for Privacy/Terms links (defaults to geocode base). |
 
-If Supabase is not configured the app runs on the bundled demo listings, just
-like the web app.
+**Release / EAS production builds must set Supabase secrets** — missing env throws at startup (no silent demo). Configure via Expo dashboard → Project → Secrets, matching `eas.json` env keys.
+
+If Supabase is not configured in development, the app runs on the bundled demo listings.
+
 
 ## Running locally
 

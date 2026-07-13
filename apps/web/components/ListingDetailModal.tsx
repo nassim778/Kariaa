@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "./LanguageProvider";
+import { useAuth } from "./AuthProvider";
 import { propertyTypeKey } from "@/lib/i18n";
 import { BRAND } from "@/lib/brand";
 import { listingImages } from "@/lib/listingImages";
@@ -21,10 +22,15 @@ export default function ListingDetailModal({
   onEdit,
 }: Props) {
   const { t } = useI18n();
+  const { session } = useAuth();
   const images = listingImages(l);
   const displayImages = images.length ? images : [BRAND.placeholderListing];
   const [imageIdx, setImageIdx] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportMsg, setReportMsg] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const activeImage = displayImages[imageIdx] ?? displayImages[0];
   const owned = Boolean(
@@ -79,6 +85,37 @@ export default function ListingDetailModal({
   };
 
   const phoneHref = l.phone?.replace(/[^\d+]/g, "");
+
+  const submitReport = async () => {
+    setReportMsg(null);
+    if (!session?.access_token) {
+      setReportMsg(t("report_need_auth"));
+      return;
+    }
+    setReportLoading(true);
+    try {
+      const res = await fetch("/api/report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ listingId: l.id, reason: reportReason }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReportMsg(data?.error?.message ?? t("generic_error"));
+        return;
+      }
+      setReportMsg(t("report_sent"));
+      setReportOpen(false);
+      setReportReason("");
+    } catch {
+      setReportMsg(t("generic_error"));
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   return (
     <>
@@ -247,6 +284,50 @@ export default function ListingDetailModal({
               >
                 {t("edit_my_listing")}
               </button>
+            )}
+
+            {!owned && (
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                {!reportOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setReportOpen(true)}
+                    className="text-xs font-medium text-red-600 hover:underline"
+                  >
+                    {t("report_listing")}
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <textarea
+                      value={reportReason}
+                      onChange={(e) => setReportReason(e.target.value)}
+                      placeholder={t("report_reason_ph")}
+                      rows={3}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={reportLoading}
+                        onClick={submitReport}
+                        className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+                      >
+                        {t("report_listing")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReportOpen(false)}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-600"
+                      >
+                        {t("cancel")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {reportMsg && (
+                  <p className="mt-2 text-xs text-slate-600">{reportMsg}</p>
+                )}
+              </div>
             )}
           </div>
         </div>

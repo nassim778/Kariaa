@@ -14,9 +14,12 @@
     "build": "npm run build --workspace apps/web",
     "start": "npm run start --workspace apps/web",
     "lint": "npm run lint --workspace apps/web",
+    "typecheck": "npm run typecheck --workspace apps/web",
+    "test": "npm run test --workspace packages/shared && npm run test --workspace apps/web",
     "web": "npm run dev --workspace apps/web",
     "mobile": "npm --prefix apps/mobile run start",
-    "db:schema": "node scripts/apply-schema.mjs"
+    "db:schema": "node scripts/apply-schema.mjs",
+    "db:migrate": "node scripts/apply-migrations.mjs"
   },
   "devDependencies": {
     "pg": "^8.22.0"

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { getBrowserSupabase } from "@/lib/supabaseClient";
 import { BRAND } from "@/lib/brand";
 import BrandLogo from "./BrandLogo";
@@ -11,7 +12,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "reset";
 
 export default function AuthModal({ onClose }: Props) {
   const { t } = useI18n();
@@ -33,7 +34,13 @@ export default function AuthModal({ onClose }: Props) {
     }
     setLoading(true);
     try {
-      if (mode === "signup") {
+      if (mode === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+        if (error) throw error;
+        setInfo(t("reset_password_sent"));
+      } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (data.session) {
@@ -57,6 +64,13 @@ export default function AuthModal({ onClose }: Props) {
     }
   };
 
+  const title =
+    mode === "reset"
+      ? t("forgot_password")
+      : mode === "signin"
+        ? t("signin_title")
+        : t("signup_title");
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
@@ -75,88 +89,92 @@ export default function AuthModal({ onClose }: Props) {
           />
         </div>
         <div className="p-5 pb-safe sm:p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <BrandLogo size={32} />
-          <h2 className="text-lg font-bold text-slate-800">
-            {mode === "signin" ? t("signin_title") : t("signup_title")}
-          </h2>
-        </div>
-
-        <p className="mb-4 text-xs text-slate-500">
-          {mode === "signin" ? t("signin_sub") : t("signup_sub")}
-        </p>
-
-        <form onSubmit={submit} className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              {t("email")}
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand"
-              placeholder={t("email_ph")}
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              {t("password")}
-            </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand"
-              placeholder="••••••••"
-            />
+          <div className="mb-4 flex items-center gap-2">
+            <BrandLogo size={32} />
+            <h2 className="text-lg font-bold text-slate-800">{title}</h2>
           </div>
 
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
-              {error}
-            </p>
-          )}
-          {info && (
-            <p className="rounded-lg bg-teal-50 px-3 py-2 text-xs text-teal-700">
-              {info}
+          {mode !== "reset" && (
+            <p className="mb-4 text-xs text-slate-500">
+              {mode === "signin" ? t("signin_sub") : t("signup_sub")}
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand py-2.5 text-sm font-medium text-white transition hover:bg-brand-dark disabled:opacity-60"
-          >
-            {loading && (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          <form onSubmit={submit} className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">
+                {t("email")}
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand"
+                placeholder={t("email_ph")}
+              />
+            </div>
+            {mode !== "reset" && (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  {t("password")}
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand"
+                  placeholder="••••••••"
+                />
+              </div>
             )}
-            {mode === "signin" ? t("signin_btn") : t("signup_btn")}
-          </button>
-        </form>
 
-        <div className="mt-4 text-center text-xs text-slate-500">
-          {mode === "signin" ? (
-            <>
-              {t("no_account")}{" "}
+            {error && (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+                {error}
+              </p>
+            )}
+            {info && (
+              <p className="rounded-lg bg-teal-50 px-3 py-2 text-xs text-teal-700">
+                {info}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand py-2.5 text-sm font-medium text-white transition hover:bg-brand-dark disabled:opacity-60"
+            >
+              {loading && (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              )}
+              {mode === "reset"
+                ? t("reset_password_btn")
+                : mode === "signin"
+                  ? t("signin_btn")
+                  : t("signup_btn")}
+            </button>
+          </form>
+
+          <div className="mt-4 space-y-2 text-center text-xs text-slate-500">
+            {mode === "signin" && (
               <button
+                type="button"
                 onClick={() => {
-                  setMode("signup");
+                  setMode("reset");
                   setError(null);
                   setInfo(null);
                 }}
                 className="font-medium text-brand hover:underline"
               >
-                {t("create_account")}
+                {t("forgot_password")}
               </button>
-            </>
-          ) : (
-            <>
-              {t("have_account")}{" "}
+            )}
+            {mode === "reset" ? (
               <button
+                type="button"
                 onClick={() => {
                   setMode("signin");
                   setError(null);
@@ -166,9 +184,46 @@ export default function AuthModal({ onClose }: Props) {
               >
                 {t("signin_btn")}
               </button>
-            </>
-          )}
-        </div>
+            ) : mode === "signin" ? (
+              <div>
+                {t("no_account")}{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("signup");
+                    setError(null);
+                    setInfo(null);
+                  }}
+                  className="font-medium text-brand hover:underline"
+                >
+                  {t("create_account")}
+                </button>
+              </div>
+            ) : (
+              <div>
+                {t("have_account")}{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("signin");
+                    setError(null);
+                    setInfo(null);
+                  }}
+                  className="font-medium text-brand hover:underline"
+                >
+                  {t("signin_btn")}
+                </button>
+              </div>
+            )}
+            <div className="flex justify-center gap-3 pt-2 text-[11px]">
+              <Link href="/privacy" className="text-slate-400 hover:text-brand">
+                {t("privacy_link")}
+              </Link>
+              <Link href="/terms" className="text-slate-400 hover:text-brand">
+                {t("terms_link")}
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>

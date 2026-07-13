@@ -17,13 +17,14 @@ export interface ListingSearchParams {
 export interface ListingSearchResult {
   listings: Listing[];
   source: "supabase" | "demo";
+  error?: string;
 }
 
 /**
- * Fetch listings for a radius or viewport search, mirroring the web
- * `/api/listings` route. Calls the PostGIS RPCs directly when a Supabase
- * client is provided; otherwise (or on any error) falls back to bundled demo
- * data with client-side filtering.
+ * Fetch listings for a radius or viewport search.
+ * Demo data is used only when no Supabase client is configured (local
+ * zero-config). If a client exists and the query fails, the error is
+ * rethrown — never silently replaced with demo listings.
  */
 export async function searchListings(
   supabase: SupabaseClient | null,
@@ -35,49 +36,44 @@ export async function searchListings(
   const minBeds = filters.minBeds;
   const types = filters.types?.length ? filters.types : undefined;
 
-  if (supabase) {
-    try {
-      if (center) {
-        const { data, error } = await supabase.rpc("listings_in_radius", {
-          center_lng: center.lng,
-          center_lat: center.lat,
-          radius_m: center.radiusM,
-          min_price: minPrice ?? null,
-          max_price: maxPrice ?? null,
-          types: types ?? null,
-          min_beds: minBeds ?? null,
-        });
-        if (error) throw error;
-        return { listings: (data as Listing[]) ?? [], source: "supabase" };
-      }
-      if (bbox) {
-        const { data, error } = await supabase.rpc("listings_in_bbox", {
-          min_lng: bbox.minLng,
-          min_lat: bbox.minLat,
-          max_lng: bbox.maxLng,
-          max_lat: bbox.maxLat,
-          min_price: minPrice ?? null,
-          max_price: maxPrice ?? null,
-          types: types ?? null,
-          min_beds: minBeds ?? null,
-        });
-        if (error) throw error;
-        return { listings: (data as Listing[]) ?? [], source: "supabase" };
-      }
-      const { data, error } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("is_active", true)
-        .limit(500);
-      if (error) throw error;
-      return { listings: (data as Listing[]) ?? [], source: "supabase" };
-    } catch (e) {
-      // Fall through to demo data on any backend error.
-      console.warn("Supabase query failed, using demo data:", e);
-    }
+  if (!supabase) {
+    return { listings: demoSearch(params), source: "demo" };
   }
 
-  return { listings: demoSearch(params), source: "demo" };
+  if (center) {
+    const { data, error } = await supabase.rpc("listings_in_radius", {
+      center_lng: center.lng,
+      center_lat: center.lat,
+      radius_m: center.radiusM,
+      min_price: minPrice ?? null,
+      max_price: maxPrice ?? null,
+      types: types ?? null,
+      min_beds: minBeds ?? null,
+    });
+    if (error) throw error;
+    return { listings: (data as Listing[]) ?? [], source: "supabase" };
+  }
+  if (bbox) {
+    const { data, error } = await supabase.rpc("listings_in_bbox", {
+      min_lng: bbox.minLng,
+      min_lat: bbox.minLat,
+      max_lng: bbox.maxLng,
+      max_lat: bbox.maxLat,
+      min_price: minPrice ?? null,
+      max_price: maxPrice ?? null,
+      types: types ?? null,
+      min_beds: minBeds ?? null,
+    });
+    if (error) throw error;
+    return { listings: (data as Listing[]) ?? [], source: "supabase" };
+  }
+  const { data, error } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("is_active", true)
+    .limit(500);
+  if (error) throw error;
+  return { listings: (data as Listing[]) ?? [], source: "supabase" };
 }
 
 function demoSearch(params: ListingSearchParams): Listing[] {
@@ -188,8 +184,7 @@ export async function geocodeSearch(
       };
     });
   } catch (e) {
-    console.warn("Geocode failed:", e);
-    return [];
+    throw e instanceof Error ? e : new Error("Geocode failed");
   }
 }
 
@@ -293,8 +288,7 @@ export async function reverseGeocode(
       null;
     return { governorate, delegation, address };
   } catch (e) {
-    console.warn("Reverse geocode failed:", e);
-    return empty;
+    throw e instanceof Error ? e : new Error("Reverse geocode failed");
   }
 }
 

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -11,20 +13,30 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useI18n } from "@/providers/LanguageProvider";
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { useAuth } from "@/providers/AuthProvider";
+import { getSupabase, isSupabaseConfigured, legalBaseUrl } from "@/lib/supabase";
 import Spinner from "@/components/Spinner";
 import { colors, radius as rad } from "@/theme";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "reset";
 
 export default function AuthScreen() {
   const { t } = useI18n();
+  const { signOut, user } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+
+  const openLegal = (path: "/privacy" | "/terms") => {
+    if (!legalBaseUrl) {
+      Alert.alert(t("generic_error"), "Set EXPO_PUBLIC_LEGAL_BASE_URL");
+      return;
+    }
+    Linking.openURL(`${legalBaseUrl.replace(/\/$/, "")}${path}`);
+  };
 
   const submit = async () => {
     setError(null);
@@ -34,13 +46,21 @@ export default function AuthScreen() {
       setError(t("auth_unavailable"));
       return;
     }
-    if (!email.trim() || password.length < 6) {
+    if (!email.trim()) {
+      setError(t("required_error"));
+      return;
+    }
+    if (mode !== "reset" && password.length < 6) {
       setError(t("required_error"));
       return;
     }
     setLoading(true);
     try {
-      if (mode === "signup") {
+      if (mode === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+        if (error) throw error;
+        setInfo(t("reset_password_sent"));
+      } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (data.session) {
@@ -64,6 +84,13 @@ export default function AuthScreen() {
     }
   };
 
+  const title =
+    mode === "reset"
+      ? t("forgot_password")
+      : mode === "signin"
+        ? t("signin_title")
+        : t("signup_title");
+
   return (
     <KeyboardAvoidingView
       style={styles.root}
@@ -77,12 +104,12 @@ export default function AuthScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.title}>
-          {mode === "signin" ? t("signin_title") : t("signup_title")}
-        </Text>
-        <Text style={styles.sub}>
-          {mode === "signin" ? t("signin_sub") : t("signup_sub")}
-        </Text>
+        <Text style={styles.title}>{title}</Text>
+        {mode !== "reset" && (
+          <Text style={styles.sub}>
+            {mode === "signin" ? t("signin_sub") : t("signup_sub")}
+          </Text>
+        )}
 
         {!isSupabaseConfigured && (
           <Text style={styles.warn}>{t("auth_unavailable")}</Text>
@@ -99,15 +126,19 @@ export default function AuthScreen() {
           style={styles.input}
         />
 
-        <Text style={styles.label}>{t("password")}</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          placeholderTextColor={colors.slate400}
-          secureTextEntry
-          style={styles.input}
-        />
+        {mode !== "reset" && (
+          <>
+            <Text style={styles.label}>{t("password")}</Text>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor={colors.slate400}
+              secureTextEntry
+              style={styles.input}
+            />
+          </>
+        )}
 
         {error && <Text style={styles.error}>{error}</Text>}
         {info && <Text style={styles.info}>{info}</Text>}
@@ -121,25 +152,77 @@ export default function AuthScreen() {
             <Spinner size="small" color={colors.white} />
           ) : (
             <Text style={styles.submitText}>
-              {mode === "signin" ? t("signin_btn") : t("signup_btn")}
+              {mode === "reset"
+                ? t("reset_password_btn")
+                : mode === "signin"
+                  ? t("signin_btn")
+                  : t("signup_btn")}
             </Text>
           )}
         </Pressable>
 
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>
-            {mode === "signin" ? t("no_account") : t("have_account")}{" "}
-          </Text>
+        {mode === "signin" && (
           <Pressable
             onPress={() => {
-              setMode(mode === "signin" ? "signup" : "signin");
+              setMode("reset");
               setError(null);
               setInfo(null);
             }}
+            style={styles.forgot}
           >
-            <Text style={styles.switchLink}>
-              {mode === "signin" ? t("create_account") : t("signin_btn")}
-            </Text>
+            <Text style={styles.switchLink}>{t("forgot_password")}</Text>
+          </Pressable>
+        )}
+
+        <View style={styles.switchRow}>
+          {mode === "reset" ? (
+            <Pressable
+              onPress={() => {
+                setMode("signin");
+                setError(null);
+                setInfo(null);
+              }}
+            >
+              <Text style={styles.switchLink}>{t("signin_btn")}</Text>
+            </Pressable>
+          ) : (
+            <>
+              <Text style={styles.switchLabel}>
+                {mode === "signin" ? t("no_account") : t("have_account")}{" "}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  setMode(mode === "signin" ? "signup" : "signin");
+                  setError(null);
+                  setInfo(null);
+                }}
+              >
+                <Text style={styles.switchLink}>
+                  {mode === "signin" ? t("create_account") : t("signin_btn")}
+                </Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+
+        {user && (
+          <Pressable
+            style={styles.logout}
+            onPress={async () => {
+              await signOut();
+              router.back();
+            }}
+          >
+            <Text style={styles.logoutText}>{t("logout")}</Text>
+          </Pressable>
+        )}
+
+        <View style={styles.legalRow}>
+          <Pressable onPress={() => openLegal("/privacy")}>
+            <Text style={styles.legalLink}>{t("privacy_link")}</Text>
+          </Pressable>
+          <Pressable onPress={() => openLegal("/terms")}>
+            <Text style={styles.legalLink}>{t("terms_link")}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -211,11 +294,29 @@ const styles = StyleSheet.create({
   },
   submitDisabled: { opacity: 0.7 },
   submitText: { color: colors.white, fontWeight: "700", fontSize: 15 },
+  forgot: { marginTop: 12, alignItems: "center" },
   switchRow: {
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 18,
+    flexWrap: "wrap",
   },
   switchLabel: { fontSize: 13, color: colors.slate500 },
   switchLink: { fontSize: 13, fontWeight: "600", color: colors.brand },
+  logout: {
+    marginTop: 24,
+    alignItems: "center",
+    padding: 12,
+    borderRadius: rad.md,
+    borderWidth: 1,
+    borderColor: colors.slate200,
+  },
+  logoutText: { color: colors.slate600, fontWeight: "600" },
+  legalRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 16,
+    marginTop: 20,
+  },
+  legalLink: { fontSize: 12, color: colors.slate400 },
 });

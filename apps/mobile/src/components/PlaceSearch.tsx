@@ -40,11 +40,17 @@ export default function PlaceSearch({ onSelect }: Props) {
     setLoading(true);
     const id = ++reqId.current;
     const timer = setTimeout(async () => {
-      const places = await searchPlaces(trimmed, locale);
-      if (id !== reqId.current) return; // stale response
-      setResults(places);
-      setOpen(true);
-      setLoading(false);
+      try {
+        const places = await searchPlaces(trimmed, locale);
+        if (id !== reqId.current) return;
+        setResults(places);
+        setOpen(true);
+      } catch {
+        if (id !== reqId.current) return;
+        setResults([]);
+      } finally {
+        if (id === reqId.current) setLoading(false);
+      }
     }, 350);
     return () => clearTimeout(timer);
   }, [q, locale]);

@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { Image } from "expo-image";
@@ -20,6 +21,7 @@ import {
 import { useAuth } from "@/providers/AuthProvider";
 import { useI18n } from "@/providers/LanguageProvider";
 import { getListingById } from "@/lib/api";
+import { apiBaseUrl } from "@/lib/supabase";
 import Spinner from "@/components/Spinner";
 import { colors, radius as rad, PLACEHOLDER_IMAGE } from "@/theme";
 
@@ -27,11 +29,14 @@ const { width } = Dimensions.get("window");
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { t } = useI18n();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageIdx, setImageIdx] = useState(0);
+  const [reportReason, setReportReason] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportMsg, setReportMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,6 +164,70 @@ export default function ListingDetailScreen() {
               <Text style={styles.editText}>{t("edit_my_listing")}</Text>
             </Pressable>
           )}
+
+          {!owned && (
+            <View style={styles.reportBox}>
+              {!reportOpen ? (
+                <Pressable onPress={() => setReportOpen(true)}>
+                  <Text style={styles.reportLink}>{t("report_listing")}</Text>
+                </Pressable>
+              ) : (
+                <>
+                  <TextInput
+                    value={reportReason}
+                    onChangeText={setReportReason}
+                    placeholder={t("report_reason_ph")}
+                    placeholderTextColor={colors.slate400}
+                    style={styles.reportInput}
+                    multiline
+                  />
+                  <Pressable
+                    style={styles.reportBtn}
+                    onPress={async () => {
+                      setReportMsg(null);
+                      if (!session?.access_token) {
+                        setReportMsg(t("report_need_auth"));
+                        return;
+                      }
+                      if (!apiBaseUrl) {
+                        setReportMsg("Set EXPO_PUBLIC_GEOCODE_BASE_URL");
+                        return;
+                      }
+                      try {
+                        const res = await fetch(`${apiBaseUrl}/api/report`, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${session.access_token}`,
+                          },
+                          body: JSON.stringify({
+                            listingId: l.id,
+                            reason: reportReason,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                          setReportMsg(
+                            data?.error?.message ?? t("generic_error")
+                          );
+                          return;
+                        }
+                        setReportMsg(t("report_sent"));
+                        setReportOpen(false);
+                      } catch {
+                        setReportMsg(t("generic_error"));
+                      }
+                    }}
+                  >
+                    <Text style={styles.reportBtnText}>{t("report_listing")}</Text>
+                  </Pressable>
+                </>
+              )}
+              {reportMsg ? (
+                <Text style={styles.reportMsg}>{reportMsg}</Text>
+              ) : null}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -271,4 +340,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   editText: { color: colors.brand, fontWeight: "600", fontSize: 14 },
+  reportBox: { marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.slate100 },
+  reportLink: { color: colors.red, fontWeight: "600", fontSize: 13 },
+  reportInput: {
+    borderWidth: 1,
+    borderColor: colors.slate200,
+    borderRadius: rad.md,
+    padding: 10,
+    minHeight: 72,
+    color: colors.slate800,
+    marginBottom: 8,
+  },
+  reportBtn: {
+    backgroundColor: colors.red,
+    borderRadius: rad.md,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  reportBtnText: { color: colors.white, fontWeight: "600", fontSize: 13 },
+  reportMsg: { marginTop: 8, fontSize: 12, color: colors.slate600 },
 });

@@ -1,12 +1,10 @@
 # Render Blueprint — https://render.com/docs/blueprint-spec
-# Connect repo at https://dashboard.render.com → New → Blueprint
 services:
   - type: web
     name: karia
     runtime: node
     plan: free
     region: frankfurt
-    # Install the whole workspace at the repo root, then build the web app.
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /
@@ -16,4 +14,6 @@ services:
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
