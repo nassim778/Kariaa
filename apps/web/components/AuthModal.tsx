@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getBrowserSupabase } from "@/lib/supabaseClient";
+import { env } from "@/lib/env";
 import { BRAND } from "@/lib/brand";
 import BrandLogo from "./BrandLogo";
 import { useI18n } from "./LanguageProvider";
@@ -35,8 +36,9 @@ export default function AuthModal({ onClose }: Props) {
     setLoading(true);
     try {
       if (mode === "reset") {
+        const origin = env.siteUrl || window.location.origin;
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+          redirectTo: `${origin}/auth/callback?next=/reset-password`,
         });
         if (error) throw error;
         setInfo(t("reset_password_sent"));

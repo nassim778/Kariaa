@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEMO_LISTINGS, haversine } from "./demoListings";
-import { Filters, GeoPlace, Listing, PropertyType } from "./types";
+import { Filters, GeoPlace, Listing, matchesSizeFilter, PropertyType } from "./types";
 import { Locale } from "./i18n";
 import { acceptLanguageFor, localeToNominatimLang } from "./nominatimLang";
 
@@ -83,7 +83,7 @@ function demoSearch(params: ListingSearchParams): Listing[] {
   const passesFilters = (l: Listing) =>
     (minPrice === undefined || l.price >= minPrice) &&
     (maxPrice === undefined || l.price <= maxPrice) &&
-    (minBeds === undefined || l.bedrooms >= minBeds) &&
+    matchesSizeFilter(l, minBeds) &&
     (!types?.length || types.includes(l.type));
 
   if (center) {

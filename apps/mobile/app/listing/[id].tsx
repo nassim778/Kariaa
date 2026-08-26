@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Dimensions,
   FlatList,
   Linking,
   Pressable,
@@ -8,10 +7,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Listing,
   listingImages,
@@ -22,18 +23,20 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useI18n } from "@/providers/LanguageProvider";
 import { getListingById } from "@/lib/api";
 import { apiBaseUrl } from "@/lib/supabase";
+import ImageLightbox from "@/components/ImageLightbox";
 import Spinner from "@/components/Spinner";
 import { colors, radius as rad, PLACEHOLDER_IMAGE } from "@/theme";
 
-const { width } = Dimensions.get("window");
-
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { user, session } = useAuth();
   const { t } = useI18n();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageIdx, setImageIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
   const [reportMsg, setReportMsg] = useState<string | null>(null);
@@ -69,6 +72,7 @@ export default function ListingDetailScreen() {
   const displayImages = images.length ? images : [PLACEHOLDER_IMAGE];
   const owned = Boolean(user?.id && l.owner_id && l.owner_id === user.id);
   const phoneHref = l.phone?.replace(/[^\d+]/g, "");
+  const heroH = Math.min(320, Math.round(width * 0.72));
 
   return (
     <View style={styles.root}>
@@ -83,12 +87,23 @@ export default function ListingDetailScreen() {
             onMomentumScrollEnd={(e) =>
               setImageIdx(Math.round(e.nativeEvent.contentOffset.x / width))
             }
-            renderItem={({ item }) => (
-              <Image source={{ uri: item }} style={styles.hero} contentFit="cover" />
+            renderItem={({ item, index }) => (
+              <Pressable
+                onPress={() => {
+                  setImageIdx(index);
+                  setLightboxOpen(true);
+                }}
+              >
+                <Image
+                  source={{ uri: item }}
+                  style={{ width, height: heroH, backgroundColor: colors.slate100 }}
+                  contentFit="cover"
+                />
+              </Pressable>
             )}
           />
           {displayImages.length > 1 && (
-            <View style={styles.dots}>
+            <View style={styles.dots} pointerEvents="none">
               {displayImages.map((_, i) => (
                 <View
                   key={i}
@@ -97,7 +112,10 @@ export default function ListingDetailScreen() {
               ))}
             </View>
           )}
-          <Pressable style={styles.closeBtn} onPress={() => router.back()}>
+          <Pressable
+            style={[styles.closeBtn, { top: insets.top + 8 }]}
+            onPress={() => router.back()}
+          >
             <Text style={styles.closeText}>✕</Text>
           </Pressable>
         </View>
@@ -230,6 +248,13 @@ export default function ListingDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      <ImageLightbox
+        visible={lightboxOpen}
+        images={displayImages}
+        initialIndex={imageIdx}
+        onClose={() => setLightboxOpen(false)}
+      />
     </View>
   );
 }
@@ -243,7 +268,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   muted: { color: colors.slate400 },
-  hero: { width, height: 260, backgroundColor: colors.slate100 },
   dots: {
     position: "absolute",
     bottom: 10,
@@ -262,7 +286,6 @@ const styles = StyleSheet.create({
   dotActive: { width: 16, backgroundColor: colors.white },
   closeBtn: {
     position: "absolute",
-    top: 44,
     right: 16,
     width: 34,
     height: 34,
@@ -273,7 +296,7 @@ const styles = StyleSheet.create({
   },
   closeText: { color: colors.white, fontSize: 16 },
   body: { padding: 20 },
-  priceRow: { flexDirection: "row", alignItems: "baseline", gap: 6 },
+  priceRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 6 },
   price: { fontSize: 26, fontWeight: "800", color: colors.brand },
   perMonth: { fontSize: 14, color: colors.slate400 },
   distance: {

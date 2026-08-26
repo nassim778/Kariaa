@@ -97,6 +97,7 @@ Repo: `https://github.com/nassim778/Kariaa.git`
    |-----|-------|
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your Supabase anon key |
+   | `NEXT_PUBLIC_SITE_URL` | `https://kariaa.onrender.com` (your live URL — used in reset emails) |
    | `SUPABASE_SERVICE_ROLE_KEY` | service role key (account deletion) |
 
 5. Click **Create Web Service**. First deploy takes ~5–10 minutes.
@@ -109,12 +110,14 @@ Your URL will look like: `https://karia-xxxx.onrender.com`
 
 In [Supabase Dashboard](https://supabase.com/dashboard) → your project → **Authentication → URL Configuration**:
 
-- **Site URL:** `https://kariaa.onrender.com` (or your Render URL)
-- **Redirect URLs** (add all of these; without them, reset emails fall back to `/` and look “broken”):
+- **Site URL:** must be `https://kariaa.onrender.com` — **not** `localhost`. If Site URL is `http://localhost:10000` (or similar), reset emails send users there and the link looks broken.
+- **Redirect URLs** (add all of these; without them, reset emails fall back incorrectly):
   - `https://kariaa.onrender.com/**`
   - `https://kariaa.onrender.com/auth/callback`
   - `https://kariaa.onrender.com/auth/callback?next=/reset-password`
   - `https://kariaa.onrender.com/reset-password`
+
+Also set Render env `NEXT_PUBLIC_SITE_URL=https://kariaa.onrender.com` so password-reset emails always use the production origin.
 
 Password reset (email) goes through `/auth/callback` then `/reset-password`, where the user must set a new password.
 

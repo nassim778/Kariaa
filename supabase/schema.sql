@@ -74,7 +74,11 @@ as $$
     and (min_price is null or l.price >= min_price)
     and (max_price is null or l.price <= max_price)
     and (types is null or l.type::text = any(types))
-    and (min_beds is null or l.bedrooms >= min_beds)
+    and (
+      min_beds is null
+      or (min_beds = 0 and l.type = 'studio')
+      or (min_beds > 0 and l.type <> 'studio' and l.bedrooms = min_beds)
+    )
   order by l.created_at desc
   limit max_results;
 $$;
@@ -132,7 +136,11 @@ as $$
     and (min_price is null or l.price >= min_price)
     and (max_price is null or l.price <= max_price)
     and (types is null or l.type::text = any(types))
-    and (min_beds is null or l.bedrooms >= min_beds)
+    and (
+      min_beds is null
+      or (min_beds = 0 and l.type = 'studio')
+      or (min_beds > 0 and l.type <> 'studio' and l.bedrooms = min_beds)
+    )
   order by distance_m asc
   limit max_results;
 $$;

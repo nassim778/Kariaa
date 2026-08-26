@@ -168,10 +168,10 @@ export default function FiltersSheet({
             />
           </View>
 
-          {/* Bedrooms */}
+          {/* Exact size S+n (studio = S+0) */}
           <Text style={styles.sectionLabel}>{t("bedrooms")}</Text>
           <View style={styles.chipRow}>
-            {[undefined, 1, 2, 3, 4].map((n, i) => {
+            {[undefined, 0, 1, 2, 3, 4, 5].map((n, i) => {
               const active = (filters.minBeds ?? undefined) === n;
               return (
                 <Pressable
@@ -182,7 +182,7 @@ export default function FiltersSheet({
                   <Text
                     style={[styles.chipText, active && styles.chipTextActive]}
                   >
-                    {n === undefined ? t("clear") : `${n}+`}
+                    {n === undefined ? t("clear") : `S+${n}`}
                   </Text>
                 </Pressable>
               );

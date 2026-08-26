@@ -123,10 +123,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.slate200,
     borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
   },
-  input: { flex: 1, fontSize: 15, color: colors.slate800, padding: 0 },
+  input: { flex: 1, fontSize: 14, color: colors.slate800, padding: 0 },
   pinIcon: {
     width: 16,
     height: 16,

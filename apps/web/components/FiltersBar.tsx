@@ -99,22 +99,24 @@ export default function FiltersBar({
         <span className="pr-1 text-[10px] text-slate-400">{tr("currency")}</span>
       </div>
 
-      {/* Bedrooms */}
+      {/* Exact size S+n (studio = S+0) */}
       <select
         value={filters.minBeds ?? ""}
         onChange={(e) =>
           onChange({
             ...filters,
-            minBeds: e.target.value ? Number(e.target.value) : undefined,
+            minBeds: e.target.value !== "" ? Number(e.target.value) : undefined,
           })
         }
         className="shrink-0 touch-manipulation rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 outline-none"
       >
         <option value="">{tr("bedrooms")}</option>
-        <option value="1">1+</option>
-        <option value="2">2+</option>
-        <option value="3">3+</option>
-        <option value="4">4+</option>
+        <option value="0">S+0</option>
+        <option value="1">S+1</option>
+        <option value="2">S+2</option>
+        <option value="3">S+3</option>
+        <option value="4">S+4</option>
+        <option value="5">S+5</option>
       </select>
     </div>
   );

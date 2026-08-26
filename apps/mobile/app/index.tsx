@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -32,7 +31,7 @@ type PickPurpose = "poi" | "listing" | null;
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
-  const { user, configured, signOut } = useAuth();
+  const { user, configured } = useAuth();
   const { t } = useI18n();
 
   const [listings, setListings] = useState<Listing[]>([]);
@@ -42,6 +41,7 @@ export default function MapScreen() {
   const [radiusM, setRadiusM] = useState(DEFAULT_RADIUS_M);
   const [bbox, setBBox] = useState<BBox | null>(null);
   const [basemap, setBasemap] = useState<BasemapId>("voyager");
+  const [layersOpen, setLayersOpen] = useState(false);
   const [pickPurpose, setPickPurpose] = useState<PickPurpose>(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -50,7 +50,6 @@ export default function MapScreen() {
   const sheetRef = useRef<BottomSheet>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Debounced search whenever the query inputs change (mirrors the web app).
   useEffect(() => {
     if (!poi && !bbox) return;
     clearTimeout(debounceRef.current);
@@ -62,7 +61,7 @@ export default function MapScreen() {
         const { listings: found } = await fetchListings(params);
         setFetchError(null);
         setListings(found);
-      } catch (e) {
+      } catch {
         setFetchError(t("backend_unavailable"));
         setListings([]);
       }
@@ -70,7 +69,6 @@ export default function MapScreen() {
     return () => clearTimeout(debounceRef.current);
   }, [filters, poi, radiusM, bbox, refreshKey, t]);
 
-  // Refetch when returning to the map (e.g. after adding/editing a listing).
   useFocusEffect(
     useCallback(() => {
       setRefreshKey((k) => k + 1);
@@ -92,7 +90,6 @@ export default function MapScreen() {
       });
       return;
     }
-    // poi pick
     setPoi({
       name: t("selected_point", { lat: lat.toFixed(4), lng: lng.toFixed(4) }),
       lat,
@@ -117,7 +114,17 @@ export default function MapScreen() {
     router.push(`/listing/${id}`);
   };
 
+  const onAccountPress = () => {
+    if (!user) {
+      router.push("/auth");
+      return;
+    }
+    router.push("/my-listings");
+  };
+
   const hasPoi = !!poi;
+  const sheetPeek = 120;
+  const controlBottom = sheetPeek + 16;
 
   return (
     <View style={styles.root}>
@@ -128,21 +135,108 @@ export default function MapScreen() {
         radiusM={radiusM}
         basemap={basemap}
         pickMode={pickPurpose !== null}
+        bottomInset={controlBottom + 64}
         onListingPress={openListing}
         onBBoxChange={setBBox}
         onMapPress={handleMapPress}
       />
 
-      {/* Top controls */}
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brand}>
-            Karia <Text style={styles.brandSub}>· {t("tagline")}</Text>
-          </Text>
-          <LanguageSwitcher />
+      {/* Compact floating header — search + icon tools only */}
+      <View
+        style={[styles.topBar, { paddingTop: insets.top + 6 }]}
+        pointerEvents="box-none"
+      >
+        <View style={styles.searchCard}>
+          <View style={styles.searchRow}>
+            <Text style={styles.brandInline}>K</Text>
+            <View style={styles.searchFlex}>
+              <PlaceSearch onSelect={handleSelectPlace} />
+            </View>
+            <LanguageSwitcher compact />
+          </View>
+
+          <View style={styles.toolRow}>
+            <Pressable
+              onPress={() =>
+                setPickPurpose((p) => (p === "poi" ? null : "poi"))
+              }
+              style={[
+                styles.toolBtn,
+                pickPurpose === "poi" && styles.toolBtnActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.toolText,
+                  pickPurpose === "poi" && styles.toolTextActive,
+                ]}
+                numberOfLines={1}
+              >
+                {pickPurpose === "poi" ? t("clicking_map") : t("point_on_map")}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setFiltersVisible(true)}
+              style={styles.toolBtn}
+            >
+              <Text style={styles.toolText}>{t("filters")}</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setLayersOpen((o) => !o)}
+              style={[styles.toolBtn, layersOpen && styles.toolBtnActive]}
+            >
+              <Text
+                style={[styles.toolText, layersOpen && styles.toolTextActive]}
+              >
+                {t(`basemap_${basemap}`)}
+              </Text>
+            </Pressable>
+
+            {hasPoi ? (
+              <Pressable
+                onPress={() => setPoi(null)}
+                style={[styles.toolBtn, styles.clearBtn]}
+              >
+                <Text style={styles.clearText}>{t("clear")}</Text>
+              </Pressable>
+            ) : null}
+
+            <Pressable onPress={onAccountPress} style={styles.accountBtn}>
+              <Text style={styles.accountBtnText} numberOfLines={1}>
+                {user ? t("my_listings") : t("login")}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
-        <PlaceSearch onSelect={handleSelectPlace} />
+        {layersOpen ? (
+          <View style={styles.layersMenu}>
+            {BASEMAP_IDS.map((id) => {
+              const active = basemap === id;
+              return (
+                <Pressable
+                  key={id}
+                  onPress={() => {
+                    setBasemap(id);
+                    setLayersOpen(false);
+                  }}
+                  style={[styles.layerChip, active && styles.layerChipActive]}
+                >
+                  <Text
+                    style={[
+                      styles.layerText,
+                      active && styles.layerTextActive,
+                    ]}
+                  >
+                    {t(`basemap_${id}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
 
         {fetchError ? (
           <Pressable
@@ -153,76 +247,10 @@ export default function MapScreen() {
             <Text style={styles.errorRetry}>{t("retry")}</Text>
           </Pressable>
         ) : null}
-
-        <View style={styles.actionRow}>
-          <Pressable
-            onPress={() =>
-              setPickPurpose((p) => (p === "poi" ? null : "poi"))
-            }
-            style={[
-              styles.actionBtn,
-              pickPurpose === "poi" && styles.actionBtnActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.actionText,
-                pickPurpose === "poi" && styles.actionTextActive,
-              ]}
-            >
-              {pickPurpose === "poi" ? t("clicking_map") : t("point_on_map")}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setFiltersVisible(true)}
-            style={styles.actionBtn}
-          >
-            <Text style={styles.actionText}>{t("filters")}</Text>
-          </Pressable>
-
-          {hasPoi && (
-            <Pressable
-              onPress={() => setPoi(null)}
-              style={[styles.actionBtn, styles.clearBtn]}
-            >
-              <Text style={styles.clearText}>{t("clear")}</Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* Basemap chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.basemapScroll}
-          contentContainerStyle={styles.basemapRow}
-        >
-          {BASEMAP_IDS.map((id) => {
-            const active = basemap === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => setBasemap(id)}
-                style={[styles.basemapChip, active && styles.basemapChipActive]}
-              >
-                <Text
-                  style={[
-                    styles.basemapText,
-                    active && styles.basemapTextActive,
-                  ]}
-                >
-                  {t(`basemap_${id}`)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
       </View>
 
-      {/* Pick-listing banner */}
       {pickPurpose === "listing" && (
-        <View style={[styles.banner, { top: insets.top + 150 }]}>
+        <View style={[styles.banner, { top: insets.top + 108 }]}>
           <Text style={styles.bannerText} numberOfLines={1}>
             {t("listing_banner")}
           </Text>
@@ -235,39 +263,15 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* Add listing FAB */}
+      {/* Single primary action: add listing (prompts sign-in if needed) */}
       <Pressable
-        style={[styles.fab, { bottom: 130 }]}
+        style={[styles.fab, { bottom: controlBottom }]}
         onPress={startAddListing}
+        accessibilityLabel={t("add_listing")}
       >
         <Text style={styles.fabPlus}>＋</Text>
       </Pressable>
 
-      {/* Account / listings quick links */}
-      <View style={[styles.sideLinks, { bottom: 190 }]}>
-        <Pressable
-          style={styles.sideLink}
-          onPress={() =>
-            user ? router.push("/my-listings") : router.push("/auth")
-          }
-        >
-          <Text style={styles.sideLinkText}>
-            {user ? t("my_listings") : t("login")}
-          </Text>
-        </Pressable>
-        {user ? (
-          <Pressable
-            style={styles.sideLink}
-            onPress={async () => {
-              await signOut();
-            }}
-          >
-            <Text style={styles.sideLinkText}>{t("logout")}</Text>
-          </Pressable>
-        ) : null}
-      </View>
-
-      {/* Listings bottom sheet */}
       <BottomSheet
         ref={sheetRef}
         index={0}
@@ -325,20 +329,86 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-    gap: 8,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
+    paddingHorizontal: 10,
+    gap: 6,
+    zIndex: 10,
   },
-  brandRow: {
+  searchCard: {
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    paddingBottom: 6,
+    gap: 6,
+    shadowColor: colors.black,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 6,
   },
-  brand: { fontSize: 18, fontWeight: "800", color: colors.brand },
-  brandSub: { fontSize: 11, fontWeight: "500", color: colors.slate400 },
+  brandInline: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    overflow: "hidden",
+    textAlign: "center",
+    lineHeight: 26,
+    fontSize: 15,
+    fontWeight: "800",
+    color: colors.white,
+    backgroundColor: colors.brand,
+  },
+  searchFlex: { flex: 1, minWidth: 0 },
+  toolRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 6,
+  },
+  toolBtn: {
+    borderWidth: 1,
+    borderColor: colors.slate200,
+    borderRadius: rad.full,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: colors.white,
+  },
+  toolBtnActive: { backgroundColor: colors.blue, borderColor: colors.blue },
+  toolText: { fontSize: 11, fontWeight: "600", color: colors.slate600 },
+  toolTextActive: { color: colors.white },
+  clearBtn: { borderColor: colors.slate200, backgroundColor: colors.slate100 },
+  clearText: { fontSize: 11, fontWeight: "600", color: colors.slate500 },
+  accountBtn: {
+    marginLeft: "auto",
+    borderRadius: rad.full,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: colors.slate800,
+  },
+  accountBtnText: { fontSize: 11, fontWeight: "700", color: colors.white },
+  layersMenu: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 8,
+    elevation: 3,
+  },
+  layerChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: rad.full,
+    backgroundColor: colors.slate100,
+  },
+  layerChipActive: { backgroundColor: colors.brand },
+  layerText: { fontSize: 11, fontWeight: "600", color: colors.slate600 },
+  layerTextActive: { color: colors.white },
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -352,31 +422,6 @@ const styles = StyleSheet.create({
   },
   errorText: { flex: 1, fontSize: 12, color: "#991b1b", fontWeight: "500" },
   errorRetry: { fontSize: 12, fontWeight: "700", color: "#b91c1c" },
-  actionRow: { flexDirection: "row", gap: 8 },
-  actionBtn: {
-    borderWidth: 1,
-    borderColor: colors.slate200,
-    borderRadius: rad.md,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: colors.white,
-  },
-  actionBtnActive: { backgroundColor: colors.blue, borderColor: colors.blue },
-  actionText: { fontSize: 12, fontWeight: "600", color: colors.slate600 },
-  actionTextActive: { color: colors.white },
-  clearBtn: { borderColor: colors.slate200, backgroundColor: colors.slate100 },
-  clearText: { fontSize: 12, fontWeight: "600", color: colors.slate500 },
-  basemapScroll: { marginHorizontal: -4 },
-  basemapRow: { gap: 6, paddingHorizontal: 4 },
-  basemapChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: rad.full,
-    backgroundColor: colors.slate100,
-  },
-  basemapChipActive: { backgroundColor: colors.brand },
-  basemapText: { fontSize: 11, fontWeight: "600", color: colors.slate600 },
-  basemapTextActive: { color: colors.white },
   banner: {
     position: "absolute",
     left: 16,
@@ -388,6 +433,7 @@ const styles = StyleSheet.create({
     borderRadius: rad.full,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    zIndex: 11,
   },
   bannerText: { flex: 1, color: colors.white, fontWeight: "600", fontSize: 13 },
   bannerCancel: {
@@ -411,16 +457,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
+    zIndex: 5,
   },
-  fabPlus: { color: colors.white, fontSize: 28, lineHeight: 30, fontWeight: "600" },
-  sideLinks: { position: "absolute", left: 14 },
-  sideLink: {
-    backgroundColor: colors.slate800,
-    borderRadius: rad.md,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  fabPlus: {
+    color: colors.white,
+    fontSize: 28,
+    lineHeight: 30,
+    fontWeight: "600",
   },
-  sideLinkText: { color: colors.white, fontSize: 12, fontWeight: "600" },
   sheetBg: { backgroundColor: colors.white },
   sheetHandle: { backgroundColor: colors.slate300, width: 40 },
   sheetHeader: {

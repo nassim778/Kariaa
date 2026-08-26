@@ -3,9 +3,9 @@ import {
   Alert,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -39,6 +39,7 @@ type ListingReport = {
 
 export default function AdminScreen() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { user, isAdmin, loading: authLoading, configured } = useAuth();
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<Tab>("listings");
@@ -46,6 +47,13 @@ export default function AdminScreen() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [reports, setReports] = useState<ListingReport[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 2 columns on phones, 3 on wider tablets — keeps cards from stretching/squashing.
+  const statsCols = width >= 720 ? 3 : 2;
+  const statsGap = 8;
+  const statsPad = 16;
+  const statWidth =
+    (width - statsPad * 2 - statsGap * (statsCols - 1)) / statsCols;
 
   const load = useCallback(async () => {
     const supabase = getSupabase();
@@ -95,7 +103,10 @@ export default function AdminScreen() {
     }, [authLoading, load]),
   );
 
-  const toggleActive = async (id: string, isActive: boolean | null | undefined) => {
+  const toggleActive = async (
+    id: string,
+    isActive: boolean | null | undefined,
+  ) => {
     const supabase = getSupabase();
     if (!supabase) return;
     await supabase
@@ -175,43 +186,62 @@ export default function AdminScreen() {
     );
   }
 
+  const stats = [
+    { label: t("admin_stats_listings"), value: listings.length },
+    { label: t("admin_stats_active"), value: activeCount },
+    { label: t("admin_stats_inactive"), value: listings.length - activeCount },
+    { label: t("admin_stats_users"), value: profiles.length },
+    { label: t("admin_stats_reports"), value: reports.length },
+  ];
+
+  const listPad = {
+    paddingHorizontal: statsPad,
+    paddingTop: 8,
+    paddingBottom: insets.bottom + 24,
+  };
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.back}>{t("admin_back")}</Text>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          style={styles.backBtn}
+        >
+          <Text style={styles.back} numberOfLines={1}>
+            {t("admin_back")}
+          </Text>
         </Pressable>
-        <LanguageSwitcher />
+        <LanguageSwitcher compact />
       </View>
+
       <Text style={styles.title}>{t("admin_title")}</Text>
+      <Text style={styles.sub}>{t("admin_sub")}</Text>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.stats}
-      >
-        <Stat label={t("admin_stats_listings")} value={listings.length} />
-        <Stat label={t("admin_stats_active")} value={activeCount} />
-        <Stat
-          label={t("admin_stats_inactive")}
-          value={listings.length - activeCount}
-        />
-        <Stat label={t("admin_stats_users")} value={profiles.length} />
-        <Stat label={t("admin_stats_reports")} value={reports.length} />
-      </ScrollView>
+      <View style={[styles.statsGrid, { paddingHorizontal: statsPad, gap: statsGap }]}>
+        {stats.map((s) => (
+          <View key={s.label} style={[styles.stat, { width: statWidth }]}>
+            <Text style={styles.statValue} numberOfLines={1}>
+              {s.value}
+            </Text>
+            <Text style={styles.statLabel} numberOfLines={2}>
+              {s.label}
+            </Text>
+          </View>
+        ))}
+      </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabs}
-      >
+      <View style={styles.tabs}>
         {(["listings", "users", "reports"] as Tab[]).map((id) => (
           <Pressable
             key={id}
             onPress={() => setTab(id)}
             style={[styles.tab, tab === id && styles.tabActive]}
           >
-            <Text style={[styles.tabText, tab === id && styles.tabTextActive]}>
+            <Text
+              style={[styles.tabText, tab === id && styles.tabTextActive]}
+              numberOfLines={1}
+            >
               {t(
                 id === "listings"
                   ? "admin_tab_listings"
@@ -225,34 +255,31 @@ export default function AdminScreen() {
             </Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
 
       {tab === "listings" ? (
         <FlatList
           data={listings}
           keyExtractor={(l) => l.id}
           initialNumToRender={12}
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: insets.bottom + 24,
-          }}
+          contentContainerStyle={listPad}
           renderItem={({ item: l }) => {
             const active = l.is_active !== false;
             return (
-              <View style={styles.row}>
-                <View style={styles.rowMain}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>
-                    {l.title}
-                  </Text>
-                  <Text style={styles.rowMeta} numberOfLines={1}>
-                    {t(propertyTypeKey(l.type))} · {sizeLabel(l)} ·{" "}
-                    {l.delegation}
-                  </Text>
-                  <Text style={styles.rowPrice}>
-                    {l.price} {t("currency")}
-                  </Text>
-                </View>
-                <View style={styles.rowActions}>
+              <View style={styles.card}>
+                <View style={styles.cardTop}>
+                  <View style={styles.cardMain}>
+                    <Text style={styles.cardTitle} numberOfLines={2}>
+                      {l.title}
+                    </Text>
+                    <Text style={styles.cardMeta} numberOfLines={2}>
+                      {t(propertyTypeKey(l.type))} · {sizeLabel(l)} ·{" "}
+                      {l.delegation}
+                    </Text>
+                    <Text style={styles.cardPrice}>
+                      {l.price} {t("currency")}
+                    </Text>
+                  </View>
                   <View
                     style={[
                       styles.statusBadge,
@@ -272,16 +299,18 @@ export default function AdminScreen() {
                         : t("admin_status_inactive")}
                     </Text>
                   </View>
+                </View>
+                <View style={styles.actions}>
                   <Pressable
-                    style={styles.smallBtn}
+                    style={styles.actionBtn}
                     onPress={() => toggleActive(l.id, l.is_active)}
                   >
-                    <Text style={styles.smallBtnText}>
+                    <Text style={styles.actionText}>
                       {active ? t("admin_deactivate") : t("admin_activate")}
                     </Text>
                   </Pressable>
                   <Pressable
-                    style={[styles.smallBtn, styles.dangerBtn]}
+                    style={[styles.actionBtn, styles.dangerBtn]}
                     onPress={() => deleteListing(l.id)}
                   >
                     <Text style={styles.dangerText}>
@@ -298,46 +327,50 @@ export default function AdminScreen() {
           data={profiles}
           keyExtractor={(p) => p.id}
           initialNumToRender={12}
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: insets.bottom + 24,
-          }}
+          contentContainerStyle={listPad}
           renderItem={({ item: p }) => (
-            <View style={styles.row}>
-              <View style={styles.rowMain}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                  {p.email ?? p.id.slice(0, 8)}
-                  {p.id === user.id ? `  ${t("admin_you")}` : ""}
-                </Text>
-                <View
-                  style={[
-                    styles.roleBadge,
-                    p.is_admin === 1 ? styles.roleAdmin : styles.roleUser,
-                  ]}
-                >
-                  <Text
+            <View style={styles.card}>
+              <View style={styles.cardTop}>
+                <View style={styles.cardMain}>
+                  <Text style={styles.cardTitle} numberOfLines={2}>
+                    {p.email ?? p.id.slice(0, 8)}
+                    {p.id === user.id ? `  ${t("admin_you")}` : ""}
+                  </Text>
+                  <View
                     style={[
-                      styles.roleText,
-                      p.is_admin === 1
-                        ? styles.roleTextAdmin
-                        : styles.roleTextUser,
+                      styles.roleBadge,
+                      p.is_admin === 1 ? styles.roleAdmin : styles.roleUser,
                     ]}
                   >
-                    {p.is_admin === 1
-                      ? t("admin_role_admin")
-                      : t("admin_role_user")}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.roleText,
+                        p.is_admin === 1
+                          ? styles.roleTextAdmin
+                          : styles.roleTextUser,
+                      ]}
+                    >
+                      {p.is_admin === 1
+                        ? t("admin_role_admin")
+                        : t("admin_role_user")}
+                    </Text>
+                  </View>
                 </View>
               </View>
-              {p.id !== user.id && (
-                <Pressable style={styles.smallBtn} onPress={() => toggleAdmin(p)}>
-                  <Text style={styles.smallBtnText}>
-                    {p.is_admin === 1
-                      ? t("admin_remove_admin")
-                      : t("admin_make_admin")}
-                  </Text>
-                </Pressable>
-              )}
+              {p.id !== user.id ? (
+                <View style={styles.actions}>
+                  <Pressable
+                    style={styles.actionBtn}
+                    onPress={() => toggleAdmin(p)}
+                  >
+                    <Text style={styles.actionText}>
+                      {p.is_admin === 1
+                        ? t("admin_remove_admin")
+                        : t("admin_make_admin")}
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
           )}
         />
@@ -346,10 +379,7 @@ export default function AdminScreen() {
           data={reports}
           keyExtractor={(r) => r.id}
           initialNumToRender={12}
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: insets.bottom + 24,
-          }}
+          contentContainerStyle={listPad}
           ListEmptyComponent={
             <Text style={styles.empty}>{t("admin_no_reports")}</Text>
           }
@@ -359,32 +389,32 @@ export default function AdminScreen() {
               profiles.find((p) => p.id === r.reporter_id)?.email ??
               r.reporter_id.slice(0, 8);
             return (
-              <View style={styles.row}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
+              <View style={styles.card}>
+                <Text style={styles.cardTitle} numberOfLines={2}>
                   {listing?.title ?? r.listing_id.slice(0, 8)}
                 </Text>
-                <Text style={styles.rowMeta}>{r.reason}</Text>
-                <Text style={styles.rowMeta}>
+                <Text style={styles.cardMeta}>{r.reason}</Text>
+                <Text style={styles.cardMeta} numberOfLines={1}>
                   {t("admin_col_reporter")}: {reporter}
                 </Text>
-                <Text style={styles.rowMeta}>{formatDate(r.created_at)}</Text>
-                <View style={styles.rowActions}>
-                  {listing && (
+                <Text style={styles.cardMeta}>{formatDate(r.created_at)}</Text>
+                <View style={styles.actions}>
+                  {listing ? (
                     <>
                       <Pressable
-                        style={styles.smallBtn}
+                        style={styles.actionBtn}
                         onPress={() =>
                           toggleActive(listing.id, listing.is_active)
                         }
                       >
-                        <Text style={styles.smallBtnText}>
+                        <Text style={styles.actionText}>
                           {listing.is_active !== false
                             ? t("admin_deactivate")
                             : t("admin_activate")}
                         </Text>
                       </Pressable>
                       <Pressable
-                        style={[styles.smallBtn, styles.dangerBtn]}
+                        style={[styles.actionBtn, styles.dangerBtn]}
                         onPress={() => deleteListing(listing.id)}
                       >
                         <Text style={styles.dangerText}>
@@ -392,12 +422,12 @@ export default function AdminScreen() {
                         </Text>
                       </Pressable>
                     </>
-                  )}
+                  ) : null}
                   <Pressable
-                    style={styles.smallBtn}
+                    style={styles.actionBtn}
                     onPress={() => dismissReport(r.id)}
                   >
-                    <Text style={styles.smallBtnText}>
+                    <Text style={styles.actionText}>
                       {t("admin_dismiss_report")}
                     </Text>
                   </Pressable>
@@ -407,15 +437,6 @@ export default function AdminScreen() {
           }}
         />
       )}
-    </View>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
@@ -436,8 +457,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    gap: 12,
   },
+  backBtn: { flexShrink: 1, minWidth: 0 },
   back: { fontSize: 13, fontWeight: "600", color: colors.slate600 },
   title: {
     fontSize: 22,
@@ -445,31 +468,64 @@ const styles = StyleSheet.create({
     color: colors.slate800,
     paddingHorizontal: 16,
   },
-  stats: {
-    flexDirection: "row",
-    gap: 8,
+  sub: {
+    fontSize: 13,
+    color: colors.slate500,
     paddingHorizontal: 16,
-    marginTop: 12,
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   stat: {
-    minWidth: 88,
     backgroundColor: colors.white,
     borderRadius: rad.md,
     borderWidth: 1,
     borderColor: colors.slate200,
-    padding: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    marginBottom: 8,
   },
-  statValue: { fontSize: 20, fontWeight: "800", color: colors.slate800 },
-  statLabel: { fontSize: 10, color: colors.slate500, marginTop: 2 },
-  tabs: { flexDirection: "row", gap: 8, padding: 16, paddingBottom: 4 },
-  tab: {
+  statValue: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.slate800,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: colors.slate500,
+    marginTop: 4,
+    lineHeight: 14,
+  },
+  tabs: {
+    flexDirection: "row",
+    gap: 6,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+  },
+  tab: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 9,
+    paddingHorizontal: 6,
     borderRadius: rad.sm,
     backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.slate200,
+    alignItems: "center",
   },
-  tabActive: { backgroundColor: colors.brand },
-  tabText: { fontSize: 13, fontWeight: "600", color: colors.slate600 },
+  tabActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.slate600,
+    textAlign: "center",
+  },
   tabTextActive: { color: colors.white },
   empty: {
     textAlign: "center",
@@ -477,7 +533,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 32,
   },
-  row: {
+  card: {
     backgroundColor: colors.white,
     borderRadius: rad.md,
     borderWidth: 1,
@@ -485,45 +541,61 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
   },
-  rowMain: { marginBottom: 8 },
-  rowTitle: { fontSize: 14, fontWeight: "600", color: colors.slate800 },
-  rowMeta: { fontSize: 12, color: colors.slate400, marginTop: 2 },
-  rowPrice: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.brand,
-    marginTop: 2,
+  cardTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
   },
-  rowActions: {
+  cardMain: { flex: 1, minWidth: 0 },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.slate800,
+    lineHeight: 19,
+  },
+  cardMeta: {
+    fontSize: 12,
+    color: colors.slate500,
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  cardPrice: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.brand,
+    marginTop: 6,
+  },
+  actions: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    alignItems: "center",
-    marginTop: 8,
+    marginTop: 12,
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: rad.full,
-  },
-  statusActive: { backgroundColor: colors.teal100 },
-  statusInactive: { backgroundColor: colors.slate100 },
-  statusText: { fontSize: 11, fontWeight: "600" },
-  statusTextActive: { color: colors.teal700 },
-  statusTextInactive: { color: colors.slate500 },
-  smallBtn: {
+  actionBtn: {
     borderWidth: 1,
     borderColor: colors.slate200,
     borderRadius: rad.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: colors.slate50,
   },
-  smallBtnText: { fontSize: 12, color: colors.slate600, fontWeight: "500" },
-  dangerBtn: { borderColor: "#fecaca" },
-  dangerText: { fontSize: 12, color: colors.red, fontWeight: "500" },
+  actionText: { fontSize: 12, color: colors.slate700, fontWeight: "600" },
+  dangerBtn: { borderColor: "#fecaca", backgroundColor: "#fef2f2" },
+  dangerText: { fontSize: 12, color: colors.red, fontWeight: "600" },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: rad.full,
+    flexShrink: 0,
+  },
+  statusActive: { backgroundColor: colors.teal100 },
+  statusInactive: { backgroundColor: colors.slate100 },
+  statusText: { fontSize: 11, fontWeight: "700" },
+  statusTextActive: { color: colors.teal700 },
+  statusTextInactive: { color: colors.slate500 },
   roleBadge: {
     alignSelf: "flex-start",
-    marginTop: 6,
+    marginTop: 8,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: rad.full,
